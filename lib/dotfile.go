@@ -173,7 +173,7 @@ func (df *Dotfile) Process() {
 	// Append/Copy files
 	for _, fileSrc := range df.Files {
 		var fileDest = path.Join(df.DirDest, "."+fileSrc)
-		if !Contains(Conf.FileSkip, fileSrc) {
+		if !Contains(Conf.FileSkip, path.Base(fileSrc)) {
 			switch df.Mode {
 			case ProcModeAppend:
 				FileAppend(path.Join(df.DirSrc, fileSrc), fileDest)
