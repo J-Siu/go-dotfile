@@ -29,6 +29,18 @@ import (
 	"github.com/edwardrf/symwalk"
 )
 
+func FileChmod(fileSrc string, fileDest string) error {
+	info, err := os.Stat(fileSrc)
+	if err != nil {
+		return err
+	}
+
+	prefix := "FileChmod"
+	helper.ReportDebug(fileSrc+" -> "+fileDest+"("+info.Mode().String()+")", prefix, false, true)
+
+	return os.Chmod(fileDest, info.Mode())
+}
+
 func FileCopy(fileSrc string, fileDest string) error {
 	prefix := "FileCP"
 	helper.ReportDebug(fileSrc+" -> "+fileDest, prefix, false, true)
@@ -38,7 +50,12 @@ func FileCopy(fileSrc string, fileDest string) error {
 		return err
 	}
 
-	return os.WriteFile(fileDest, data, 0666)
+	err = os.WriteFile(fileDest, data, 0666)
+	if err != nil {
+		return err
+	}
+
+	return FileChmod(fileSrc, fileDest)
 }
 
 func FileAppend(fileSrc string, fileDest string) error {
