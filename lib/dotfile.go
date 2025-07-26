@@ -29,6 +29,15 @@ import (
 	"github.com/edwardrf/symwalk"
 )
 
+func Contains[T comparable](arr []T, x T) bool {
+	for _, v := range arr {
+		if v == x {
+			return true
+		}
+	}
+	return false
+}
+
 func FileChmod(fileSrc string, fileDest string) error {
 	info, err := os.Stat(fileSrc)
 	if err != nil {
@@ -164,13 +173,17 @@ func (df *Dotfile) Process() {
 	// Append/Copy files
 	for _, fileSrc := range df.Files {
 		var fileDest = path.Join(df.DirDest, "."+fileSrc)
-		switch df.Mode {
-		case ProcModeAppend:
-			FileAppend(path.Join(df.DirSrc, fileSrc), fileDest)
-		case ProcModeCopy:
-			FileCopy(path.Join(df.DirSrc, fileSrc), fileDest)
-		default:
-			helper.Report(df.Mode, prefix+" df.Mode error", false, true)
+		if !Contains(Conf.FileSkip, fileSrc) {
+			switch df.Mode {
+			case ProcModeAppend:
+				FileAppend(path.Join(df.DirSrc, fileSrc), fileDest)
+			case ProcModeCopy:
+				FileCopy(path.Join(df.DirSrc, fileSrc), fileDest)
+			default:
+				helper.Report(df.Mode, prefix+" df.Mode error", false, true)
+			}
+		} else {
+			helper.ReportDebug("Skipped "+path.Join(df.DirSrc, fileSrc), prefix, false, true)
 		}
 	}
 }

@@ -7,5 +7,8 @@
 	"DirCP": [
 		"~/df_test/df_pub/base",
 		"~/df_test/df_pri/base"
+	],
+	"FileSkip": [
+		".DS_Store"
 	]
 }

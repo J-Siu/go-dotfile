@@ -46,10 +46,11 @@ const (
 )
 
 type TypeConf struct {
-	DirAP   []string `json:"DirAP"`
-	DirCP   []string `json:"DirCP"`
-	DirDest string   `json:"DirDest"`
-	File    string   `json:"-"`
+	DirAP    []string `json:"DirAP"`
+	DirCP    []string `json:"DirCP"`
+	DirDest  string   `json:"DirDest"`
+	File     string   `json:"-"`
+	FileSkip []string `json:"FileSkip"`
 }
 
 func (s *TypeConf) Init() {
@@ -60,6 +61,9 @@ func (s *TypeConf) Init() {
 	}
 	for i := range s.DirCP {
 		s.DirCP[i] = tildeEnvExpand(s.DirCP[i])
+	}
+	for i := range s.FileSkip {
+		s.FileSkip[i] = tildeEnvExpand(s.FileSkip[i])
 	}
 	s.DirDest = tildeEnvExpand(s.DirDest)
 	s.File = tildeEnvExpand(s.File)
