@@ -1,0 +1,11 @@
+{
+	"DirDest": "~/tmp",
+	"DirAP": [
+		"~/df_test/df_pub/append",
+		"~/df_test/df_pri/append"
+	],
+	"DirCP": [
+		"~/df_test/df_pub/base",
+		"~/df_test/df_pri/base"
+	]
+}
