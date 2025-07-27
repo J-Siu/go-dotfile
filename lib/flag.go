@@ -23,5 +23,6 @@ package lib
 
 // Holding all flags from command line
 type TypeFlag struct {
-	Debug bool // Enable debug output
+	Debug  bool // Enable debug output
+	Dryrun bool
 }
