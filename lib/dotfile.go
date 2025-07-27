@@ -185,7 +185,9 @@ func (df *TypeDotfile) ProcessFile(src string, dest string) error {
 	if df.Mode == ProcModeAppend {
 		fileMode |= os.O_APPEND
 	}
-
+	if df.Mode == ProcModeCopy {
+		fileMode |= os.O_TRUNC
+	}
 	// Open destination file with append
 	f, err := os.OpenFile(dest, fileMode, 0644)
 	if err != nil {
