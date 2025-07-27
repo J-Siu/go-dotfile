@@ -22,6 +22,7 @@ THE SOFTWARE.
 package lib
 
 import (
+	"io/fs"
 	"os"
 	"path"
 	"strings"
@@ -93,22 +94,19 @@ func DirFileGet(dir string) (dirs []string, files []string) {
 	return dirs, files
 }
 
-func FileChmod(fileSrc string, fileDest string) (err error) {
+func FileChmod(fileSrc string, fileDest string) (mode fs.FileMode, err error) {
 	info, err := os.Stat(fileSrc)
 	if err != nil {
-		return err
+		return info.Mode(), err
 	}
 
-	prefix := "FileChmod"
-	helper.ReportDebug(fileSrc+" -> "+fileDest+"("+info.Mode().String()+")", prefix, false, true)
+	// prefix := "FileChmod"
+	// helper.ReportDebug(fileSrc+" -> "+fileDest+"("+info.Mode().String()+")", prefix, false, true)
 
-	return os.Chmod(fileDest, info.Mode())
+	return info.Mode(), os.Chmod(fileDest, info.Mode())
 }
 
-func FileCopy(fileSrc string, fileDest string) error {
-	prefix := "FileCopy"
-	helper.ReportDebug(fileSrc+" -> "+fileDest, prefix, false, true)
-
+func FileCopy(fileSrc string, fileDest string) (err error) {
 	data, err := os.ReadFile(fileSrc)
 	if err != nil {
 		return err
@@ -119,7 +117,12 @@ func FileCopy(fileSrc string, fileDest string) error {
 		return err
 	}
 
-	return FileChmod(fileSrc, fileDest)
+	mode, err := FileChmod(fileSrc, fileDest)
+
+	prefix := "FileCopy"
+	helper.ReportDebug(fileSrc+" -> "+fileDest+" ("+mode.String()+")", prefix, false, true)
+
+	return err
 }
 
 func FileAppend(fileSrc string, fileDest string) error {
