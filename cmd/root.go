@@ -23,6 +23,7 @@ package cmd
 
 import (
 	"os"
+	"runtime"
 
 	"github.com/J-Siu/go-dotfile/lib"
 	"github.com/J-Siu/go-helper"
@@ -50,6 +51,13 @@ func Execute() {
 }
 
 func init() {
+	switch runtime.GOOS {
+	case "darwin":
+	case "linux":
+	default:
+		helper.Report("Only support Linux and MacOS.", "", false, true)
+		os.Exit(1)
+	}
 	cobra.OnInitialize(initConfig)
 	rootCmd.PersistentFlags().BoolVarP(&lib.Flag.Debug, "debug", "d", false, "Enable debug")
 	rootCmd.PersistentFlags().BoolVarP(&lib.Flag.Dryrun, "dryrun", "", false, "Dryrun")
