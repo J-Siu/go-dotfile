@@ -81,7 +81,7 @@ func DirFileGet(dir string) (dirs []string, files []string) {
 	symwalk.Walk(dir, func(p string, info os.FileInfo, err error) error {
 		// helper.ReportDebug(p, "\n"+prefix, false, true)
 		if info.IsDir() {
-			if !ContainsArraySubString(Conf.DirSkip, "/"+p+"/") {
+			if p != "." && !ContainsArraySubString(Conf.DirSkip, "/"+p+"/") {
 				dirs = append(dirs, p)
 			}
 		} else {
@@ -94,8 +94,8 @@ func DirFileGet(dir string) (dirs []string, files []string) {
 	return dirs, files
 }
 
-func FileChmod(fileSrc string, fileDest string) (mode fs.FileMode, err error) {
-	info, err := os.Stat(fileSrc)
+func FileCopyMode(src string, dest string) (mode fs.FileMode, err error) {
+	info, err := os.Stat(src)
 	if err != nil {
 		return info.Mode(), err
 	}
@@ -103,54 +103,15 @@ func FileChmod(fileSrc string, fileDest string) (mode fs.FileMode, err error) {
 	// prefix := "FileChmod"
 	// helper.ReportDebug(fileSrc+" -> "+fileDest+"("+info.Mode().String()+")", prefix, false, true)
 
-	return info.Mode(), os.Chmod(fileDest, info.Mode())
+	return info.Mode(), os.Chmod(dest, info.Mode())
 }
 
-func FileCopy(fileSrc string, fileDest string) (err error) {
-	data, err := os.ReadFile(fileSrc)
-	if err != nil {
-		return err
+// Add "."" in front of path if there is none
+func PathHide(p string) string {
+	if strings.HasPrefix(p, ".") {
+		return p
 	}
-
-	err = os.WriteFile(fileDest, data, 0666)
-	if err != nil {
-		return err
-	}
-
-	mode, err := FileChmod(fileSrc, fileDest)
-
-	prefix := "FileCopy"
-	helper.ReportDebug(fileSrc+" -> "+fileDest+" ("+mode.String()+")", prefix, false, true)
-
-	return err
-}
-
-func FileAppend(fileSrc string, fileDest string) error {
-	prefix := "FileAppend"
-	helper.ReportDebug(fileSrc+" -> "+fileDest, prefix, false, true)
-
-	// Read source file
-	data, err := os.ReadFile(fileSrc)
-	if err != nil {
-		return err
-	}
-
-	// Open destination file with append
-	f, err := os.OpenFile(fileDest, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		return err
-	}
-
-	// Append newline to destination file
-	_, err = f.Write([]byte("\n"))
-	if err != nil {
-		return err
-	}
-
-	// Append source content to destination file
-	_, err = f.Write(data)
-	f.Close()
-	return err
+	return "." + p
 }
 
 const (
@@ -180,10 +141,22 @@ func (df *TypeDotfile) Init(dirSrc string, dirDest string, mode string) {
 	os.Chdir(df.DirSrc)
 	df.Dirs, df.Files = DirFileGet(".")
 	helper.ReportDebug(df, prefix+" Dotfile", false, false)
+	df.CheckMode()
+}
+
+func (df *TypeDotfile) CheckMode() {
+	prefix := "TypeDotfiles.CheckMode"
+	switch df.Mode {
+	case ProcModeAppend:
+	case ProcModeCopy:
+	default:
+		helper.Report("df.Mode error: "+df.Mode, prefix, false, true)
+		os.Exit(1)
+	}
 }
 
 func (df *TypeDotfile) Process() {
-	prefix := "Dotfiles.Process"
+	df.CheckMode()
 	// Create directories
 	for _, fileDir := range df.Dirs {
 		err := DirCreate(fileDir, df.DirDest)
@@ -192,15 +165,41 @@ func (df *TypeDotfile) Process() {
 		}
 	}
 	// Append/Copy files
-	for _, fileSrc := range df.Files {
-		var fileDest = path.Join(df.DirDest, "."+fileSrc)
-		switch df.Mode {
-		case ProcModeAppend:
-			FileAppend(path.Join(df.DirSrc, fileSrc), fileDest)
-		case ProcModeCopy:
-			FileCopy(path.Join(df.DirSrc, fileSrc), fileDest)
-		default:
-			helper.Report("df.Mode error: "+df.Mode, prefix, false, true)
-		}
+	for _, filepathSrc := range df.Files {
+		filepathDest := path.Join(df.DirDest, PathHide(filepathSrc))
+		df.ProcessFile(path.Join(df.DirSrc, filepathSrc), filepathDest)
 	}
+}
+
+func (df *TypeDotfile) ProcessFile(src string, dest string) error {
+	prefix := "TypeDotfiles.FileProc"
+	helper.ReportDebug(df.Mode+" "+src+" -> "+dest, prefix, false, true)
+
+	// Read source file
+	data, err := os.ReadFile(src)
+	if err != nil {
+		return err
+	}
+
+	fileMode := os.O_CREATE | os.O_WRONLY
+	if df.Mode == ProcModeAppend {
+		fileMode |= os.O_APPEND
+	}
+
+	// Open destination file with append
+	f, err := os.OpenFile(dest, fileMode, 0644)
+	if err != nil {
+		return err
+	}
+
+	// Append newline to destination file
+	_, err = f.Write([]byte("\n"))
+	if err != nil {
+		return err
+	}
+
+	// Append source content to destination file
+	_, err = f.Write(data)
+	f.Close()
+	return err
 }
