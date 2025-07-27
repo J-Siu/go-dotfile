@@ -8,6 +8,9 @@
 		"~/df_test/df_pub/base",
 		"~/df_test/df_pri/base"
 	],
+	"DirSkip": [
+		".git"
+	],
 	"FileSkip": [
 		".DS_Store"
 	]

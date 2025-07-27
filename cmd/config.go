@@ -34,10 +34,7 @@ var configCmd = &cobra.Command{
 	Short:   "Print configurations",
 	Run: func(cmd *cobra.Command, args []string) {
 		helper.Debug = lib.Flag.Debug
-		helper.Report(&lib.Conf.File, "Config", true, true)
-		helper.Report(&lib.Conf.DirDest, lib.ConfDirDest, true, true)
-		helper.Report(&lib.Conf.DirCP, lib.ConfDirCP, true, false)
-		helper.Report(&lib.Conf.DirAP, lib.ConfDirAP, true, false)
+		helper.Report(&lib.Conf, "Config", true, false)
 	},
 }
 

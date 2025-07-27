@@ -25,6 +25,7 @@ import (
 	"os"
 	"regexp"
 
+	"github.com/J-Siu/go-helper"
 	"github.com/spf13/viper"
 )
 
@@ -49,6 +50,7 @@ type TypeConf struct {
 	DirAP    []string `json:"DirAP"`
 	DirCP    []string `json:"DirCP"`
 	DirDest  string   `json:"DirDest"`
+	DirSkip  []string `json:"DirSkip"`
 	File     string   `json:"-"`
 	FileSkip []string `json:"FileSkip"`
 }
@@ -56,15 +58,24 @@ type TypeConf struct {
 func (s *TypeConf) Init() {
 	s.File = viper.ConfigFileUsed()
 	viper.Unmarshal(&s)
+
+	prefix := "TypeConf.Init"
+	helper.ReportDebug(s, prefix+":Raw", false, true)
+
 	for i := range s.DirAP {
 		s.DirAP[i] = tildeEnvExpand(s.DirAP[i])
 	}
 	for i := range s.DirCP {
 		s.DirCP[i] = tildeEnvExpand(s.DirCP[i])
 	}
+	for i := range s.DirSkip {
+		s.DirSkip[i] = tildeEnvExpand(s.DirSkip[i])
+	}
 	for i := range s.FileSkip {
 		s.FileSkip[i] = tildeEnvExpand(s.FileSkip[i])
 	}
 	s.DirDest = tildeEnvExpand(s.DirDest)
 	s.File = tildeEnvExpand(s.File)
+
+	helper.ReportDebug(s, prefix+":Expand", false, true)
 }

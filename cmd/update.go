@@ -24,12 +24,12 @@ var updateCmd = &cobra.Command{
 			dirDest, _ = os.UserHomeDir()
 		}
 		for _, dir := range lib.Conf.DirCP {
-			var df lib.Dotfile
+			var df lib.TypeDotfile
 			df.Init(dir, dirDest, lib.ProcModeCopy)
 			df.Process()
 		}
 		for _, dir := range lib.Conf.DirAP {
-			var df lib.Dotfile
+			var df lib.TypeDotfile
 			df.Init(dir, dirDest, lib.ProcModeAppend)
 			df.Process()
 		}

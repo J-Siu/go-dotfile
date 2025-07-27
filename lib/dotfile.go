@@ -24,6 +24,7 @@ package lib
 import (
 	"os"
 	"path"
+	"strings"
 
 	"github.com/J-Siu/go-helper"
 	"github.com/edwardrf/symwalk"
@@ -38,7 +39,61 @@ func Contains[T comparable](arr []T, x T) bool {
 	return false
 }
 
-func FileChmod(fileSrc string, fileDest string) error {
+func ContainsArraySubString(strArray []string, str string) bool {
+	// prefix := "ContainsArraySubString"
+	// helper.ReportDebug(str, prefix, false, true)
+	for _, s := range strArray {
+		if strings.Contains(str, s) {
+			// helper.ReportDebug(str+" ~= "+s, prefix, false, true)
+			return true
+		}
+	}
+	// helper.ReportDebug(str+" not match", prefix, false, true)
+	return false
+}
+
+func DirCreate(dir string, dirBase string) (err error) {
+	var prefix = "DirCreate"
+	if !(dir == "." || dir == "") {
+		dirDest := path.Join(dirBase, "."+dir)
+		if !DirExists(dirDest) {
+			err = os.MkdirAll(dirDest, os.ModePerm)
+			if err == nil {
+				helper.ReportDebug(dirDest, prefix+" created", true, true)
+			} else {
+				helper.Report(err, prefix+" ERROR", false, true)
+			}
+		}
+	}
+	return err
+}
+
+func DirExists(p string) bool {
+	if info, err := os.Stat(p); err == nil {
+		return info.IsDir()
+	}
+	return false
+}
+
+func DirFileGet(dir string) (dirs []string, files []string) {
+	// prefix := "DirFileGet"
+	symwalk.Walk(dir, func(p string, info os.FileInfo, err error) error {
+		// helper.ReportDebug(p, "\n"+prefix, false, true)
+		if info.IsDir() {
+			if !ContainsArraySubString(Conf.DirSkip, "/"+p+"/") {
+				dirs = append(dirs, p)
+			}
+		} else {
+			if !Contains(Conf.FileSkip, path.Base(p)) && !ContainsArraySubString(Conf.DirSkip, "/"+p) {
+				files = append(files, p)
+			}
+		}
+		return nil
+	})
+	return dirs, files
+}
+
+func FileChmod(fileSrc string, fileDest string) (err error) {
 	info, err := os.Stat(fileSrc)
 	if err != nil {
 		return err
@@ -51,7 +106,7 @@ func FileChmod(fileSrc string, fileDest string) error {
 }
 
 func FileCopy(fileSrc string, fileDest string) error {
-	prefix := "FileCP"
+	prefix := "FileCopy"
 	helper.ReportDebug(fileSrc+" -> "+fileDest, prefix, false, true)
 
 	data, err := os.ReadFile(fileSrc)
@@ -68,7 +123,7 @@ func FileCopy(fileSrc string, fileDest string) error {
 }
 
 func FileAppend(fileSrc string, fileDest string) error {
-	prefix := "FileAP"
+	prefix := "FileAppend"
 	helper.ReportDebug(fileSrc+" -> "+fileDest, prefix, false, true)
 
 	// Read source file
@@ -95,57 +150,21 @@ func FileAppend(fileSrc string, fileDest string) error {
 	return err
 }
 
-func DirFileGet(dir string) (dirs []string, files []string) {
-	// var files []string
-	symwalk.Walk(dir, func(p string, info os.FileInfo, err error) error {
-		if info.IsDir() {
-			dirs = append(dirs, p)
-		} else {
-			files = append(files, p)
-		}
-		return nil
-	})
-	return dirs, files
-}
-
-func DirCreate(dir string, dirBase string) (err error) {
-	var prefix = "DirCreate"
-	if !(dir == "." || dir == "") {
-		dirDest := path.Join(dirBase, "."+dir)
-		if !DirExists(dirDest) {
-			err = os.MkdirAll(dirDest, os.ModePerm)
-			if err == nil {
-				helper.ReportDebug(dirDest, prefix+" created", true, true)
-			} else {
-				helper.Report(err, prefix+" ERROR", false, true)
-			}
-		}
-	}
-	return err
-}
-
-func DirExists(p string) bool {
-	if info, err := os.Stat(p); err == nil {
-		return info.IsDir()
-	}
-	return false
-}
-
 const (
-	ProcModeAppend int = 0
-	ProcModeCopy   int = 1
+	ProcModeAppend string = "append"
+	ProcModeCopy   string = "copy"
 )
 
-type Dotfile struct {
+type TypeDotfile struct {
 	Dirs    []string
 	Files   []string
 	DirDest string
 	DirSrc  string
-	Mode    int // modeAppend | modeCopy
+	Mode    string // modeAppend | modeCopy
 }
 
-func (df *Dotfile) Init(dirSrc string, dirDest string, mode int) {
-	prefix := "Dotfiles.Init()"
+func (df *TypeDotfile) Init(dirSrc string, dirDest string, mode string) {
+	prefix := "Dotfiles.Init"
 	if !(mode == ProcModeAppend || mode == ProcModeCopy) {
 		helper.Report("mode error", prefix, false, true)
 		return
@@ -157,11 +176,10 @@ func (df *Dotfile) Init(dirSrc string, dirDest string, mode int) {
 
 	os.Chdir(df.DirSrc)
 	df.Dirs, df.Files = DirFileGet(".")
-	// helper.ReportDebug(df.Dirs, prefix+" Dirs", false, false)
-	// helper.ReportDebug(df.Files, prefix+" Files", false, false)
+	helper.ReportDebug(df, prefix+" Dotfile", false, false)
 }
 
-func (df *Dotfile) Process() {
+func (df *TypeDotfile) Process() {
 	prefix := "Dotfiles.Process"
 	// Create directories
 	for _, fileDir := range df.Dirs {
@@ -173,17 +191,13 @@ func (df *Dotfile) Process() {
 	// Append/Copy files
 	for _, fileSrc := range df.Files {
 		var fileDest = path.Join(df.DirDest, "."+fileSrc)
-		if !Contains(Conf.FileSkip, path.Base(fileSrc)) {
-			switch df.Mode {
-			case ProcModeAppend:
-				FileAppend(path.Join(df.DirSrc, fileSrc), fileDest)
-			case ProcModeCopy:
-				FileCopy(path.Join(df.DirSrc, fileSrc), fileDest)
-			default:
-				helper.Report(df.Mode, prefix+" df.Mode error", false, true)
-			}
-		} else {
-			helper.ReportDebug("Skipped "+path.Join(df.DirSrc, fileSrc), prefix, false, true)
+		switch df.Mode {
+		case ProcModeAppend:
+			FileAppend(path.Join(df.DirSrc, fileSrc), fileDest)
+		case ProcModeCopy:
+			FileCopy(path.Join(df.DirSrc, fileSrc), fileDest)
+		default:
+			helper.Report("df.Mode error: "+df.Mode, prefix, false, true)
 		}
 	}
 }
