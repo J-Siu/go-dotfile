@@ -193,9 +193,11 @@ func (df *TypeDotfile) ProcessFile(src string, dest string) error {
 	}
 
 	// Append newline to destination file
-	_, err = f.Write([]byte("\n"))
-	if err != nil {
-		return err
+	if df.Mode == ProcModeAppend {
+		_, err = f.Write([]byte("\n"))
+		if err != nil {
+			return err
+		}
 	}
 
 	// Append source content to destination file
