@@ -201,11 +201,18 @@ func (df *TypeDotfile) ProcessFile(src string, dest string) error {
 	f.Close()
 
 	// Set dest permission
-	err = os.Chmod(dest, filePermission)
+	fpString := ".........."
+	if df.Mode == ProcModeCopy {
+		err = os.Chmod(dest, filePermission)
+		fpString = filePermission.String() + "  "
+	}
 
-	prefix := "TypeDotfile.ProcessFile"
+	var prefix string
 	if Flag.Debug || Flag.Verbose {
-		helper.Report(df.Mode+" "+src+" -> "+dest+" ("+filePermission.String()+")", prefix, false, true)
+		if Flag.Debug {
+			prefix = "TypeDotfile.ProcessFile"
+		}
+		helper.Report(fpString+" "+df.Mode+" "+src+" -> "+dest, prefix, false, true)
 	}
 
 	return err
