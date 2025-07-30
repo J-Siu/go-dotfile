@@ -22,7 +22,6 @@ THE SOFTWARE.
 package lib
 
 import (
-	"io/fs"
 	"os"
 	"path"
 	"strings"
@@ -94,18 +93,6 @@ func DirFileGet(dir string) (dirs []string, files []string) {
 	return dirs, files
 }
 
-func FileCopyMode(src string, dest string) (mode fs.FileMode, err error) {
-	info, err := os.Stat(src)
-	if err != nil {
-		return info.Mode(), err
-	}
-
-	// prefix := "FileChmod"
-	// helper.ReportDebug(fileSrc+" -> "+fileDest+"("+info.Mode().String()+")", prefix, false, true)
-
-	return info.Mode(), os.Chmod(dest, info.Mode())
-}
-
 // Add "."" in front of path if there is none
 func PathHide(p string) string {
 	if strings.HasPrefix(p, ".") {
@@ -141,10 +128,10 @@ func (df *TypeDotfile) Init(dirSrc string, dirDest string, mode string) {
 	os.Chdir(df.DirSrc)
 	df.Dirs, df.Files = DirFileGet(".")
 	helper.ReportDebug(df, prefix+" Dotfile", false, false)
-	df.CheckMode()
+	df.ProcessCheckMode()
 }
 
-func (df *TypeDotfile) CheckMode() {
+func (df *TypeDotfile) ProcessCheckMode() {
 	prefix := "TypeDotfiles.CheckMode"
 	switch df.Mode {
 	case ProcModeAppend:
@@ -156,7 +143,7 @@ func (df *TypeDotfile) CheckMode() {
 }
 
 func (df *TypeDotfile) Process() {
-	df.CheckMode()
+	df.ProcessCheckMode()
 	// Create directories
 	for _, fileDir := range df.Dirs {
 		err := DirCreate(fileDir, df.DirDest)
@@ -172,9 +159,6 @@ func (df *TypeDotfile) Process() {
 }
 
 func (df *TypeDotfile) ProcessFile(src string, dest string) error {
-	prefix := "TypeDotfiles.FileProc"
-	helper.ReportDebug(df.Mode+" "+src+" -> "+dest, prefix, false, true)
-
 	// Read source file
 	data, err := os.ReadFile(src)
 	if err != nil {
@@ -188,8 +172,14 @@ func (df *TypeDotfile) ProcessFile(src string, dest string) error {
 	if df.Mode == ProcModeCopy {
 		fileMode |= os.O_TRUNC
 	}
+	info, err := os.Stat(src)
+	if err != nil {
+		return err
+	}
+	filePermission := info.Mode()
+
 	// Open destination file with append
-	f, err := os.OpenFile(dest, fileMode, 0644)
+	f, err := os.OpenFile(dest, fileMode, filePermission)
 	if err != nil {
 		return err
 	}
@@ -204,6 +194,19 @@ func (df *TypeDotfile) ProcessFile(src string, dest string) error {
 
 	// Append source content to destination file
 	_, err = f.Write(data)
+	if err != nil {
+		return err
+	}
+
 	f.Close()
+
+	// Set dest permission
+	err = os.Chmod(dest, filePermission)
+
+	prefix := "TypeDotfile.ProcessFile"
+	if Flag.Debug || Flag.Verbose {
+		helper.Report(df.Mode+" "+src+" -> "+dest+" ("+filePermission.String()+")", prefix, false, true)
+	}
+
 	return err
 }

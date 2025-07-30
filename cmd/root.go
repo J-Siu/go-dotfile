@@ -61,6 +61,7 @@ func init() {
 	cobra.OnInitialize(initConfig)
 	rootCmd.PersistentFlags().BoolVarP(&lib.Flag.Debug, "debug", "d", false, "Enable debug")
 	rootCmd.PersistentFlags().BoolVarP(&lib.Flag.Dryrun, "dryrun", "", false, "Dryrun")
+	rootCmd.PersistentFlags().BoolVarP(&lib.Flag.Verbose, "verbose", "v", false, "Verbose")
 	rootCmd.PersistentFlags().StringVarP(&lib.Conf.File, "config", "c", lib.DefaultConfFile, "Config file")
 }
 
