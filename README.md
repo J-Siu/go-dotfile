@@ -56,3 +56,8 @@ Files that should keep out of dotfile management
 - `~/.ssh/known_hosts`
 - history files
 - cache files
+
+### Change Log
+
+- v1.0.7
+  - Fix Github workflows
