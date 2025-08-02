@@ -33,8 +33,9 @@ import (
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "go-dotfile",
-	Short: "A dotfile manager",
+	Use:     "go-dotfile",
+	Short:   "A dotfile manager",
+	Version: lib.Version,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		helper.Debug = lib.Flag.Debug
 		lib.Conf.Init()
