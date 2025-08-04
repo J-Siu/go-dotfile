@@ -33,7 +33,6 @@ var configCmd = &cobra.Command{
 	Aliases: []string{"c", "conf"},
 	Short:   "Print configurations",
 	Run: func(cmd *cobra.Command, args []string) {
-		helper.Debug = lib.Flag.Debug
 		helper.Report(&lib.Conf, "Config", true, false)
 	},
 }

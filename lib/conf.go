@@ -22,23 +22,9 @@ THE SOFTWARE.
 package lib
 
 import (
-	"os"
-	"regexp"
-
 	"github.com/J-Siu/go-helper"
 	"github.com/spf13/viper"
 )
-
-func tildeEnvExpand(strIn string) (strOut string) {
-	re := regexp.MustCompile(`^~/`)
-	strOut = re.ReplaceAllString(strIn, "$$HOME/")
-	strOut = os.ExpandEnv(strOut)
-
-	// prefix := "tildeEnvExpand"
-	// helper.ReportDebug(strIn+" -> "+strOut, prefix, false, true)
-
-	return strOut
-}
 
 const (
 	ConfDirAP   = "DirAP"
@@ -51,31 +37,30 @@ type TypeConf struct {
 	DirCP    []string `json:"DirCP"`
 	DirDest  string   `json:"DirDest"`
 	DirSkip  []string `json:"DirSkip"`
-	File     string   `json:"-"`
+	FileConf string   `json:"FileConf"`
 	FileSkip []string `json:"FileSkip"`
 }
 
-func (s *TypeConf) Init() {
-	s.File = viper.ConfigFileUsed()
-	viper.Unmarshal(&s)
-
+func (conf *TypeConf) Init() {
+	viper.Unmarshal(&conf)
 	prefix := "TypeConf.Init"
-	helper.ReportDebug(s, prefix+":Raw", false, true)
+	helper.ReportDebug(conf.FileConf, prefix+":Config file", false, true)
+	helper.ReportDebug(conf, prefix+":Raw", false, true)
 
-	for i := range s.DirAP {
-		s.DirAP[i] = tildeEnvExpand(s.DirAP[i])
+	for i := range conf.DirAP {
+		conf.DirAP[i] = helper.TildeEnvExpand(conf.DirAP[i])
 	}
-	for i := range s.DirCP {
-		s.DirCP[i] = tildeEnvExpand(s.DirCP[i])
+	for i := range conf.DirCP {
+		conf.DirCP[i] = helper.TildeEnvExpand(conf.DirCP[i])
 	}
-	for i := range s.DirSkip {
-		s.DirSkip[i] = tildeEnvExpand(s.DirSkip[i])
+	for i := range conf.DirSkip {
+		conf.DirSkip[i] = helper.TildeEnvExpand(conf.DirSkip[i])
 	}
-	for i := range s.FileSkip {
-		s.FileSkip[i] = tildeEnvExpand(s.FileSkip[i])
+	for i := range conf.FileSkip {
+		conf.FileSkip[i] = helper.TildeEnvExpand(conf.FileSkip[i])
 	}
-	s.DirDest = tildeEnvExpand(s.DirDest)
-	s.File = tildeEnvExpand(s.File)
+	conf.DirDest = helper.TildeEnvExpand(conf.DirDest)
+	conf.FileConf = helper.TildeEnvExpand(conf.FileConf)
 
-	helper.ReportDebug(s, prefix+":Expand", false, true)
+	helper.ReportDebug(conf, prefix+":Expand", false, true)
 }

@@ -25,7 +25,6 @@ import (
 	"os"
 
 	"github.com/J-Siu/go-dotfile/lib"
-	"github.com/J-Siu/go-helper"
 	"github.com/spf13/cobra"
 )
 
@@ -35,8 +34,6 @@ var updateCmd = &cobra.Command{
 	Aliases: []string{"u", "up"},
 	Short:   "Update dotfiles",
 	Run: func(cmd *cobra.Command, args []string) {
-		helper.Debug = lib.Flag.Debug
-
 		dirDest := lib.Conf.DirDest
 		if dirDest == "" {
 			dirDest, _ = os.UserHomeDir()
