@@ -22,6 +22,8 @@ THE SOFTWARE.
 package lib
 
 import (
+	"os"
+
 	"github.com/J-Siu/go-helper"
 	"github.com/spf13/viper"
 )
@@ -42,11 +44,43 @@ type TypeConf struct {
 }
 
 func (conf *TypeConf) Init() {
-	viper.Unmarshal(&conf)
 	prefix := "TypeConf.Init"
-	helper.ReportDebug(conf.FileConf, prefix+":Config file", false, true)
-	helper.ReportDebug(conf, prefix+":Raw", false, true)
 
+	conf.setDefault()
+
+	helper.ReportDebug(conf.FileConf, prefix+": Config file", false, true)
+
+	conf.readFileConf()
+
+	helper.ReportDebug(conf, prefix+": Raw", false, true)
+
+	conf.expand()
+
+	helper.ReportDebug(conf, prefix+": Expand", false, true)
+}
+
+func (conf *TypeConf) readFileConf() {
+	prefix := "TypeConf.readFileConf"
+	viper.SetConfigType("json")
+	viper.SetConfigFile(helper.TildeEnvExpand(Conf.FileConf))
+	viper.AutomaticEnv()
+	if err := viper.ReadInConfig(); err == nil {
+		viper.Unmarshal(&conf)
+	} else {
+		helper.Report(err.Error(), prefix, true, true)
+		os.Exit(1)
+	}
+}
+
+func (conf *TypeConf) setDefault() {
+	if Conf.FileConf == "" {
+		Conf.FileConf = Default.FileConf
+	}
+}
+
+func (conf *TypeConf) expand() {
+	conf.DirDest = helper.TildeEnvExpand(conf.DirDest)
+	conf.FileConf = helper.TildeEnvExpand(conf.FileConf)
 	for i := range conf.DirAP {
 		conf.DirAP[i] = helper.TildeEnvExpand(conf.DirAP[i])
 	}
@@ -59,8 +93,4 @@ func (conf *TypeConf) Init() {
 	for i := range conf.FileSkip {
 		conf.FileSkip[i] = helper.TildeEnvExpand(conf.FileSkip[i])
 	}
-	conf.DirDest = helper.TildeEnvExpand(conf.DirDest)
-	conf.FileConf = helper.TildeEnvExpand(conf.FileConf)
-
-	helper.ReportDebug(conf, prefix+":Expand", false, true)
 }

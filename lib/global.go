@@ -22,11 +22,12 @@ THE SOFTWARE.
 package lib
 
 var (
+	Version = "v1.0.9"
+
 	Conf TypeConf
 	Flag TypeFlag
-)
 
-const (
-	DefaultConfFile = "$HOME/.go-dotfile.json"
-	Version         = "v1.0.7"
+	Default = TypeConf{
+		FileConf: "$HOME/.config/go-dotfile.json",
+	}
 )

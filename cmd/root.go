@@ -28,7 +28,6 @@ import (
 	"github.com/J-Siu/go-dotfile/lib"
 	"github.com/J-Siu/go-helper"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 var rootCmd = &cobra.Command{
@@ -37,6 +36,7 @@ var rootCmd = &cobra.Command{
 	Version: lib.Version,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		helper.Debug = lib.Flag.Debug
+		helper.ReportDebug(lib.Version, "Version", false, true)
 		helper.ReportDebug(&lib.Flag, "Flag", false, false)
 		lib.Conf.Init()
 	},
@@ -57,23 +57,8 @@ func init() {
 		helper.Report("Only support Linux and MacOS.", "", false, true)
 		os.Exit(1)
 	}
-	cobra.OnInitialize(initConfig)
 	rootCmd.PersistentFlags().BoolVarP(&lib.Flag.Debug, "debug", "d", false, "Enable debug")
 	rootCmd.PersistentFlags().BoolVarP(&lib.Flag.Dryrun, "dryrun", "", false, "Dryrun")
 	rootCmd.PersistentFlags().BoolVarP(&lib.Flag.Verbose, "verbose", "v", false, "Verbose")
-	rootCmd.PersistentFlags().StringVarP(&lib.Conf.FileConf, "config", "c", lib.DefaultConfFile, "Config file")
-}
-
-// initConfig reads in config file and ENV variables if set.
-func initConfig() {
-	viper.SetConfigType("json")
-	if lib.Conf.FileConf == "" {
-		lib.Conf.FileConf = lib.DefaultConfFile
-	}
-	viper.SetConfigFile(helper.TildeEnvExpand(lib.Conf.FileConf))
-	viper.AutomaticEnv() // read in environment variables that match
-	if err := viper.ReadInConfig(); err != nil {
-		helper.Report(err.Error(), "", true, true)
-		os.Exit(1)
-	}
+	rootCmd.PersistentFlags().StringVarP(&lib.Conf.FileConf, "config", "c", lib.Default.FileConf, "Config file")
 }
