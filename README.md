@@ -1,3 +1,5 @@
+# go-dotfile
+
 Simple dotfile management command line.
 
 ### Minimum GO version
@@ -33,26 +35,27 @@ go install
 
 ```json
 {
-	"DirDest": "$HOME/tmp",
-	"DirAP": [
-		"$HOME/df_test/df_pub/append",
-		"$HOME/df_test/df_pri/append"
-	],
-	"DirCP": [
-		"$HOME/df_test/df_pub/base",
-		"$HOME/df_test/df_pri/base"
-	]
+  "DirDest": "$HOME/tmp",
+  "DirAP": [
+    "$HOME/df_test/df_pub/append",
+    "$HOME/df_test/df_pri/append"
+  ],
+  "DirCP": [
+    "$HOME/df_test/df_pub/base",
+    "$HOME/df_test/df_pri/base"
+  ]
 }
 ```
 
 ### Concept and Limitation
 
 - All top level directories and files are dotted in target location (`DirDest`)
-- Cannot handle symlink directory
+- Symlink directory is copied as normal directory
 
 ### Misc
 
 Files that should keep out of dotfile management
+
 - `~/.ssh/known_hosts`
 - history files
 - cache files
@@ -66,3 +69,8 @@ Files that should keep out of dotfile management
   - Fix config logic
   - Fix debug logic
   - Fix receiver name
+- v1.0.9
+  - Upgrade go-helper to v1.1.10
+  - Add command line version
+  - Move -dryRun from base to "upgrade" command
+  - Move default config file `~/.go-dotfile.json` -> `~/.config/go-dotfile.json`
