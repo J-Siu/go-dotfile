@@ -30,6 +30,7 @@ import (
 	"github.com/edwardrf/symwalk"
 )
 
+// Array contains
 func Contains[T comparable](arr []T, x T) bool {
 	for _, v := range arr {
 		if v == x {
@@ -39,6 +40,7 @@ func Contains[T comparable](arr []T, x T) bool {
 	return false
 }
 
+// Array of string contains a substring
 func ContainsArraySubString(strArray []string, str string) bool {
 	// prefix := "ContainsArraySubString"
 	// helper.ReportDebug(str, prefix, false, true)
@@ -75,6 +77,7 @@ func DirExists(p string) bool {
 	return false
 }
 
+// Get list of directory and list of file
 func DirFileGet(dir string) (dirs []string, files []string) {
 	// prefix := "DirFileGet"
 	symwalk.Walk(dir, func(p string, info os.FileInfo, err error) error {
@@ -102,11 +105,15 @@ func PathHide(p string) string {
 }
 
 const (
-	ProcModeAppend string = "append"
-	ProcModeCopy   string = "copy"
+	ProcModeAppend string = "append" // Processing mode for TypeDotfile.Mode
+	ProcModeCopy   string = "copy"   // Processing mode for TypeDotfile.Mode
 )
 
 type TypeDotfile struct {
+	Err    error
+	myType string
+	init   bool
+
 	Dirs    []string
 	Files   []string
 	DirDest string
@@ -115,7 +122,10 @@ type TypeDotfile struct {
 }
 
 func (df *TypeDotfile) Init(dirSrc string, dirDest string, mode string) {
-	prefix := "Dotfiles.Init"
+	df.init = true
+	df.myType = "TypeConf"
+	prefix := df.myType + ".Init"
+
 	if !(mode == ProcModeAppend || mode == ProcModeCopy) {
 		helper.Report("mode error", prefix, false, true)
 		return
@@ -129,17 +139,6 @@ func (df *TypeDotfile) Init(dirSrc string, dirDest string, mode string) {
 	df.Dirs, df.Files = DirFileGet(".")
 	helper.ReportDebug(df, prefix+" Dotfile", false, false)
 	df.ProcessCheckMode()
-}
-
-func (df *TypeDotfile) ProcessCheckMode() {
-	prefix := "TypeDotfiles.CheckMode"
-	switch df.Mode {
-	case ProcModeAppend:
-	case ProcModeCopy:
-	default:
-		helper.Report("df.Mode error: "+df.Mode, prefix, false, true)
-		os.Exit(1)
-	}
 }
 
 func (df *TypeDotfile) Process() {
@@ -158,7 +157,25 @@ func (df *TypeDotfile) Process() {
 	}
 }
 
+// Mode must be set
+//
+// If Mode != ProcModeAppend|ProcModeCopy then force exit
+func (df *TypeDotfile) ProcessCheckMode() {
+	prefix := df.myType + ".CheckMode"
+	switch df.Mode {
+	case ProcModeAppend:
+	case ProcModeCopy:
+	default:
+		helper.Report(df.myType+".Mode error: "+df.Mode, prefix, false, true)
+		os.Exit(1)
+	}
+}
+
+// Process file base on Mode(append|copy)
+//
+// Not using TypeDotfile.Err
 func (df *TypeDotfile) ProcessFile(src string, dest string) error {
+	prefix := df.myType + ".ProcessFile"
 	// Read source file
 	data, err := os.ReadFile(src)
 	if err != nil {
@@ -201,18 +218,16 @@ func (df *TypeDotfile) ProcessFile(src string, dest string) error {
 	f.Close()
 
 	// Set dest permission
-	fpString := ".........."
+	fpStr := ".........."
 	if df.Mode == ProcModeCopy {
 		err = os.Chmod(dest, filePermission)
-		fpString = filePermission.String() + "  "
+		fpStr = filePermission.String() + "  "
 	}
 
-	var prefix string
 	if Flag.Debug || Flag.Verbose {
 		if Flag.Debug {
-			prefix = "TypeDotfile.ProcessFile"
 		}
-		helper.Report(fpString+" "+df.Mode+" "+src+" -> "+dest, prefix, false, true)
+		helper.Report(fpStr+" "+df.Mode+" "+src+" -> "+dest, prefix, false, true)
 	}
 
 	return err
