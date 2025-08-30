@@ -3,7 +3,7 @@ module github.com/J-Siu/go-dotfile
 go 1.24.5
 
 require (
-	github.com/J-Siu/go-helper v1.1.8
+	github.com/J-Siu/go-helper v1.1.10
 	github.com/edwardrf/symwalk v0.1.0
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/viper v1.20.1
