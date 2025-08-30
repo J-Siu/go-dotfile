@@ -35,6 +35,10 @@ const (
 )
 
 type TypeConf struct {
+	Err    error
+	init   bool
+	myType string
+
 	DirAP    []string `json:"DirAP"`
 	DirCP    []string `json:"DirCP"`
 	DirDest  string   `json:"DirDest"`
@@ -43,54 +47,57 @@ type TypeConf struct {
 	FileSkip []string `json:"FileSkip"`
 }
 
-func (conf *TypeConf) Init() {
-	prefix := "TypeConf.Init"
+func (c *TypeConf) Init() {
+	c.init = true
+	c.myType = "TypeConf"
+	prefix := c.myType + ".Init"
 
-	conf.setDefault()
+	c.setDefault()
+	helper.ReportDebug(c.FileConf, prefix+": Config file", false, true)
 
-	helper.ReportDebug(conf.FileConf, prefix+": Config file", false, true)
+	c.readFileConf()
+	helper.ReportDebug(c, prefix+": Raw", false, true)
 
-	conf.readFileConf()
-
-	helper.ReportDebug(conf, prefix+": Raw", false, true)
-
-	conf.expand()
-
-	helper.ReportDebug(conf, prefix+": Expand", false, true)
+	c.expand()
+	helper.ReportDebug(c, prefix+": Expand", false, true)
 }
 
-func (conf *TypeConf) readFileConf() {
-	prefix := "TypeConf.readFileConf"
+func (c *TypeConf) readFileConf() {
+	c.myType = "TypeConf"
+	prefix := c.myType + ".readFileConf"
+
 	viper.SetConfigType("json")
 	viper.SetConfigFile(helper.TildeEnvExpand(Conf.FileConf))
 	viper.AutomaticEnv()
-	if err := viper.ReadInConfig(); err == nil {
-		viper.Unmarshal(&conf)
+	c.Err = viper.ReadInConfig()
+
+	if c.Err == nil {
+		c.Err = viper.Unmarshal(&c)
 	} else {
-		helper.Report(err.Error(), prefix, true, true)
+		helper.Report(c.Err.Error(), prefix, true, true)
 		os.Exit(1)
 	}
 }
 
-func (conf *TypeConf) setDefault() {
-	if Conf.FileConf == "" {
-		Conf.FileConf = Default.FileConf
-	}
+// Should be called before reading config file
+func (c *TypeConf) setDefault() {
+	c.DirDest, _ = os.UserHomeDir()
+	c.FileConf = Default.FileConf
 }
 
-func (conf *TypeConf) expand() {
-	conf.DirDest = helper.TildeEnvExpand(conf.DirDest)
-	conf.FileConf = helper.TildeEnvExpand(conf.FileConf)
-	for i := range conf.DirAP {
-		conf.DirAP[i] = helper.TildeEnvExpand(conf.DirAP[i])
+func (c *TypeConf) expand() {
+	c.DirDest = helper.TildeEnvExpand(c.DirDest)
+	c.FileConf = helper.TildeEnvExpand(c.FileConf)
+	for i := range c.DirAP {
+		c.DirAP[i] = helper.TildeEnvExpand(c.DirAP[i])
 	}
-	for i := range conf.DirCP {
-		conf.DirCP[i] = helper.TildeEnvExpand(conf.DirCP[i])
+	for i := range c.DirCP {
+		c.DirCP[i] = helper.TildeEnvExpand(c.DirCP[i])
 	}
-	for i := range conf.DirSkip {
-		conf.DirSkip[i] = helper.TildeEnvExpand(conf.DirSkip[i])
+	for i := range c.DirSkip {
+		c.DirSkip[i] = helper.TildeEnvExpand(c.DirSkip[i])
 	}
-	for i := range conf.FileSkip {
-		conf.FileSkip[i] = helper.TildeEnvExpand(conf.FileSkip[i])
+	for i := range c.FileSkip {
+		c.FileSkip[i] = helper.TildeEnvExpand(c.FileSkip[i])
 	}
 }

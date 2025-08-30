@@ -58,7 +58,6 @@ func init() {
 		os.Exit(1)
 	}
 	rootCmd.PersistentFlags().BoolVarP(&lib.Flag.Debug, "debug", "d", false, "Enable debug")
-	rootCmd.PersistentFlags().BoolVarP(&lib.Flag.Dryrun, "dryrun", "", false, "Dryrun")
 	rootCmd.PersistentFlags().BoolVarP(&lib.Flag.Verbose, "verbose", "v", false, "Verbose")
 	rootCmd.PersistentFlags().StringVarP(&lib.Conf.FileConf, "config", "c", lib.Default.FileConf, "Config file")
 }

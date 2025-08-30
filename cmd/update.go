@@ -22,8 +22,6 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"os"
-
 	"github.com/J-Siu/go-dotfile/lib"
 	"github.com/spf13/cobra"
 )
@@ -34,21 +32,19 @@ var updateCmd = &cobra.Command{
 	Aliases: []string{"u", "up"},
 	Short:   "Update dotfiles",
 	Run: func(cmd *cobra.Command, args []string) {
-		dirDest := lib.Conf.DirDest
-		if dirDest == "" {
-			dirDest, _ = os.UserHomeDir()
-		}
+		// Process copy
 		for _, dir := range lib.Conf.DirCP {
 			var df lib.TypeDotfile
-			df.Init(dir, dirDest, lib.ProcModeCopy)
-			if !lib.Flag.Dryrun {
+			df.Init(dir, lib.Conf.DirDest, lib.ProcModeCopy)
+			if !lib.FlagUpdate.Dryrun {
 				df.Process()
 			}
 		}
+		// Process append
 		for _, dir := range lib.Conf.DirAP {
 			var df lib.TypeDotfile
-			df.Init(dir, dirDest, lib.ProcModeAppend)
-			if !lib.Flag.Dryrun {
+			df.Init(dir, lib.Conf.DirDest, lib.ProcModeAppend)
+			if !lib.FlagUpdate.Dryrun {
 				df.Process()
 			}
 		}
@@ -57,4 +53,5 @@ var updateCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(updateCmd)
+	updateCmd.PersistentFlags().BoolVarP(&lib.FlagUpdate.Dryrun, "dryrun", "", false, "Dryrun")
 }

@@ -24,8 +24,9 @@ package lib
 var (
 	Version = "v1.0.9"
 
-	Conf TypeConf
-	Flag TypeFlag
+	Conf       TypeConf
+	Flag       TypeFlag
+	FlagUpdate TypeFlagUpdate
 
 	Default = TypeConf{
 		FileConf: "$HOME/.config/go-dotfile.json",
