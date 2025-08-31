@@ -31,7 +31,7 @@ import (
 )
 
 // Array contains
-func Contains[T comparable](arr []T, x T) bool {
+func contains[T comparable](arr []T, x T) bool {
 	for _, v := range arr {
 		if v == x {
 			return true
@@ -41,7 +41,7 @@ func Contains[T comparable](arr []T, x T) bool {
 }
 
 // Array of string contains a substring
-func ContainsArraySubString(strArray []string, str string) bool {
+func containsArraySubString(strArray []string, str string) bool {
 	// prefix := "ContainsArraySubString"
 	// helper.ReportDebug(str, prefix, false, true)
 	for _, s := range strArray {
@@ -54,10 +54,11 @@ func ContainsArraySubString(strArray []string, str string) bool {
 	return false
 }
 
-func DirCreate(dir string, dirBase string) (err error) {
+// Create dotted/hidden directory
+func dirCreateHidden(dir string, dirBase string) (err error) {
 	var prefix = "DirCreate"
 	if !(dir == "." || dir == "") {
-		dirDest := path.Join(dirBase, "."+dir)
+		dirDest := path.Join(dirBase, pathHide(dir))
 		if !DirExists(dirDest) {
 			err = os.MkdirAll(dirDest, os.ModePerm)
 			if err == nil {
@@ -78,26 +79,30 @@ func DirExists(p string) bool {
 }
 
 // Get list of directory and list of file
-func DirFileGet(dir string) (dirs []string, files []string) {
-	// prefix := "DirFileGet"
-	symwalk.Walk(dir, func(p string, info os.FileInfo, err error) error {
-		// helper.ReportDebug(p, "\n"+prefix, false, true)
+func dirFileGet(dir string) (dirs []string, files []string) {
+	err := symwalk.Walk(dir, func(p string, info os.FileInfo, err error) error {
 		if info.IsDir() {
-			if p != "." && !ContainsArraySubString(Conf.DirSkip, "/"+p+"/") {
+			if p != "." && !containsArraySubString(Conf.DirSkip, "/"+p+"/") {
 				dirs = append(dirs, p)
 			}
 		} else {
-			if !Contains(Conf.FileSkip, path.Base(p)) && !ContainsArraySubString(Conf.DirSkip, "/"+p) {
+			if !contains(Conf.FileSkip, path.Base(p)) && !containsArraySubString(Conf.DirSkip, "/"+p) {
 				files = append(files, p)
 			}
 		}
 		return nil
 	})
-	return dirs, files
+	// prefix := "dirFileGet"
+	// helper.Report(err, prefix, false, true)
+	if err == nil {
+		return dirs, files
+	} else {
+		return []string{}, []string{}
+	}
 }
 
 // Add "."" in front of path if there is none
-func PathHide(p string) string {
+func pathHide(p string) string {
 	if strings.HasPrefix(p, ".") {
 		return p
 	}
@@ -135,25 +140,29 @@ func (df *TypeDotfile) Init(dirSrc string, dirDest string, mode string) {
 	df.DirSrc = dirSrc
 	df.Mode = mode
 
-	os.Chdir(df.DirSrc)
-	df.Dirs, df.Files = DirFileGet(".")
+	err := os.Chdir(df.DirSrc)
+	if err == nil {
+		df.Dirs, df.Files = dirFileGet(".")
+	}
 	helper.ReportDebug(df, prefix+" Dotfile", false, false)
 	df.ProcessCheckMode()
 }
 
 func (df *TypeDotfile) Process() {
+	prefix := df.myType + ".Process"
+	var err error
 	df.ProcessCheckMode()
-	// Create directories
 	for _, fileDir := range df.Dirs {
-		err := DirCreate(fileDir, df.DirDest)
+		err = dirCreateHidden(fileDir, df.DirDest)
 		if err != nil {
 			os.Exit(1)
 		}
 	}
 	// Append/Copy files
 	for _, filepathSrc := range df.Files {
-		filepathDest := path.Join(df.DirDest, PathHide(filepathSrc))
-		df.ProcessFile(path.Join(df.DirSrc, filepathSrc), filepathDest)
+		filepathDest := path.Join(df.DirDest, pathHide(filepathSrc))
+		err = df.ProcessFile(path.Join(df.DirSrc, filepathSrc), filepathDest)
+		helper.ErrsQueue(err, prefix)
 	}
 }
 
