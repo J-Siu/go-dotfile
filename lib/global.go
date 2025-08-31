@@ -27,8 +27,4 @@ var (
 	Conf       TypeConf
 	Flag       TypeFlag
 	FlagUpdate TypeFlagUpdate
-
-	Default = TypeConf{
-		FileConf: "$HOME/.config/go-dotfile.json",
-	}
 )

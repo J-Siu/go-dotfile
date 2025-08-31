@@ -28,6 +28,10 @@ import (
 	"github.com/spf13/viper"
 )
 
+var Default = TypeConf{
+	FileConf: "$HOME/.config/go-dotfile.json",
+}
+
 const (
 	ConfDirAP   = "DirAP"
 	ConfDirCP   = "DirCP"
@@ -81,8 +85,10 @@ func (c *TypeConf) readFileConf() {
 
 // Should be called before reading config file
 func (c *TypeConf) setDefault() {
+	if c.FileConf == "" {
+		c.FileConf = Default.FileConf
+	}
 	c.DirDest, _ = os.UserHomeDir()
-	c.FileConf = Default.FileConf
 }
 
 func (c *TypeConf) expand() {
