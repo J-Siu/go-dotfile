@@ -64,6 +64,13 @@ func (c *TypeConf) Init() {
 
 	c.expand()
 	helper.ReportDebug(c, prefix+": Expand", false, true)
+
+	// Check DirDest
+	if !DirExists(c.DirDest) {
+		helper.Report("DirDest does not exist: "+c.DirDest, prefix, false, true)
+		os.Exit(1)
+	}
+
 }
 
 func (c *TypeConf) readFileConf() {
