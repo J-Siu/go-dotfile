@@ -2,6 +2,11 @@
 
 Simple dotfile management command line.
 
+### Concept and Limitation
+
+- Only top level directories and files are dotted in target location (`DirDest`)
+- Symlink directory is copied as normal directory
+
 ### Minimum GO version
 
 go > 1.21
@@ -47,14 +52,18 @@ go install
 }
 ```
 
-### Concept and Limitation
+### Testing
 
-- All top level directories and files are dotted in target location (`DirDest`)
-- Symlink directory is copied as normal directory
+```sh
+cp -r examples/df_test $HOME/
+mkdir $HOME/tmp
+go-dotfile -c examples/go-dotfile.sample.json
+ls -a $HOME/tmp
+```
 
 ### Misc
 
-Files that should keep out of dotfile management
+Files that should keep out of go-dotfile management
 
 - `~/.ssh/known_hosts`
 - history files
@@ -74,3 +83,13 @@ Files that should keep out of dotfile management
   - Add command line version
   - Move -dryRun from base to "upgrade" command
   - Move default config file `~/.go-dotfile.json` -> `~/.config/go-dotfile.json`
+- v1.0.10
+  - Fix TypeConf.setDefault overwrite command line config file option
+  - conf.go
+    - check DirDest exist
+  - dotfile.go
+    - Init() - Chdir() error check
+    - Process() - queue error
+    - Change some function to local
+  - root.go
+    - Print error queue
