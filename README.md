@@ -93,3 +93,5 @@ Files that should keep out of go-dotfile management
     - Change some function to local
   - root.go
     - Print error queue
+- v1.0.11
+  - Fix version
