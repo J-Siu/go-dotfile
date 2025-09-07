@@ -6,14 +6,17 @@ Simple dotfile management command line.
 
 - Only top level directories and files are dotted in target location (`DirDest`)
 - Symlink directory is copied as normal directory
+- Files removed from source, will not be deleted from target location
+- Files that should keep out of go-dotfile management
+  - `~/.ssh/known_hosts`
+  - history files
+  - cache files
 
 ### Minimum GO version
 
 go > 1.21
 
-### Install
-
-### Build
+### Build and Install
 
 ```sh
 git clone https://github.com/J-Siu/go-dotfile.git
@@ -36,7 +39,9 @@ go install
 
 ### Configuration
 
-`go-dotfile.sample.conf`
+Configuration must exist at `$HOME/.config/go-dotfile.json`, or supplied by the `-c` option.
+
+Sample configuration:
 
 ```json
 {
@@ -52,6 +57,12 @@ go install
 }
 ```
 
+Variable|Default|Usage
+--|--|--
+DirDest|$HOME|Target location of dotfiles and directories
+DirCP|n/a|Directories to be copied to target location
+DirAP|n/a|Files in these directories will be be copied to target location if not already exist, else appended
+
 ### Testing
 
 ```sh
@@ -60,14 +71,6 @@ mkdir $HOME/tmp
 go-dotfile -c examples/go-dotfile.sample.json
 ls -a $HOME/tmp
 ```
-
-### Misc
-
-Files that should keep out of go-dotfile management
-
-- `~/.ssh/known_hosts`
-- history files
-- cache files
 
 ### Change Log
 
