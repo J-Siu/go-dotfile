@@ -66,6 +66,7 @@ func (df *TypeDotfile) New(dirSrc string, dirDest string, mode FileProcMode) {
 	df.DirSrc = dirSrc
 	df.Mode = mode
 
+	// cd to simplify path handling
 	err := os.Chdir(df.DirSrc)
 	if err == nil {
 		df.Dirs, df.Files = dirFileGet(".")
@@ -85,7 +86,7 @@ func (df *TypeDotfile) Run() {
 	// Append/Copy files
 	for _, filepathSrc := range df.Files {
 		filepathDest := path.Join(df.DirDest, pathHide(filepathSrc))
-		err = df.ProcessFile(path.Join(df.DirSrc, filepathSrc), filepathDest)
+		err = df.processFile(path.Join(df.DirSrc, filepathSrc), filepathDest)
 		helper.ErrsQueue(err, prefix)
 	}
 }
@@ -93,7 +94,7 @@ func (df *TypeDotfile) Run() {
 // Process file base on Mode(append|copy)
 //
 // Not using TypeDotfile.Err
-func (df *TypeDotfile) ProcessFile(src string, dest string) (err error) {
+func (df *TypeDotfile) processFile(src string, dest string) (err error) {
 	prefix := df.MyType + ".ProcessFile"
 
 	fileProcMode := df.Mode
