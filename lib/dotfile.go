@@ -23,6 +23,7 @@ THE SOFTWARE.
 package lib
 
 import (
+	"fmt"
 	"os"
 	"path"
 	"strings"
@@ -38,6 +39,7 @@ type FileProcMode int8
 const (
 	Append FileProcMode = iota // Processing mode for TypeDotfile.Mode
 	Copy                       // Processing mode for TypeDotfile.Mode
+	Skip
 )
 
 type TypeDotfile struct {
@@ -94,65 +96,73 @@ func (df *TypeDotfile) Run() {
 func (df *TypeDotfile) ProcessFile(src string, dest string) (err error) {
 	prefix := df.MyType + ".ProcessFile"
 
+	fileProcMode := df.Mode
+	filePermStr := ".........."
+
 	// Destination FileMode
-	fileMode := os.O_CREATE | os.O_WRONLY
-	if df.Mode == Append {
-		fileMode |= os.O_APPEND
+	destFlag := os.O_CREATE | os.O_WRONLY
+	if fileProcMode == Append {
+		destFlag |= os.O_APPEND
 	}
-	if df.Mode == Copy {
+	if fileProcMode == Copy {
+		destFlag |= os.O_TRUNC
 		changed, err := fileChanged(src, dest)
-		if err != nil || !changed {
-			return err // skip if dest file same as src file
-		}
-		fileMode |= os.O_TRUNC
-	}
-
-	srcInfo, err := os.Stat(src)
-	if err != nil {
-		return err
-	}
-	srcPermission := srcInfo.Mode()
-	srcModTime := srcInfo.ModTime()
-
-	// Read source file
-	data, err := os.ReadFile(src)
-	if err != nil {
-		return err
-	}
-
-	// Open destination file
-	f, err := os.OpenFile(dest, fileMode, srcPermission)
-	if err != nil {
-		return err
-	}
-
-	// Append: add newline to destination file
-	if df.Mode == Append {
-		_, err = f.Write([]byte("\n"))
 		if err != nil {
 			return err
 		}
-	}
-
-	// Append source content to destination file
-	_, err = f.Write(data)
-	if err != nil {
-		return err
-	}
-
-	f.Close()
-
-	// Set dest permission
-	fpStr := ".........."
-	if df.Mode == Copy {
-		os.Chtimes(dest, srcModTime, srcModTime)
-		fpStr = srcPermission.String() + "  "
-	}
-
-	if Flag.Debug || Flag.Verbose {
-		if Flag.Debug {
+		if !changed {
+			fileProcMode = Skip
 		}
-		helper.Report(fpStr+" "+df.Mode.String()+" "+src+" -> "+dest, prefix, false, true)
+	}
+
+	if fileProcMode != Skip {
+		srcInfo, err := os.Stat(src)
+		if err != nil {
+			return err
+		}
+		srcPermission := srcInfo.Mode()
+		srcModTime := srcInfo.ModTime()
+
+		// Read source file
+		data, err := os.ReadFile(src)
+		if err != nil {
+			return err
+		}
+
+		// Open destination file
+		f, err := os.OpenFile(dest, destFlag, srcPermission)
+		if err != nil {
+			return err
+		}
+
+		// Append: add newline to destination file
+		if fileProcMode == Append {
+			_, err = f.Write([]byte("\n"))
+			if err != nil {
+				return err
+			}
+		}
+
+		// Append source content to destination file
+		_, err = f.Write(data)
+		if err != nil {
+			return err
+		}
+
+		f.Close()
+
+		// Set dest permission
+		if fileProcMode == Copy {
+			os.Chtimes(dest, srcModTime, srcModTime)
+			filePermStr = srcPermission.String()
+		}
+	}
+
+	str := fmt.Sprintf("%-6s %s %s -> %s", fileProcMode.String(), filePermStr, src, dest)
+	if Flag.Debug {
+		helper.Report(str, prefix, false, true)
+	} else if Flag.Verbose {
+		fmt.Println(str)
 	}
 
 	return err

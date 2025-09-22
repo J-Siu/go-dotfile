@@ -10,11 +10,12 @@ func _() {
 	var x [1]struct{}
 	_ = x[Append-0]
 	_ = x[Copy-1]
+	_ = x[Skip-2]
 }
 
-const _FileProcMode_name = "AppendCopy"
+const _FileProcMode_name = "AppendCopySkip"
 
-var _FileProcMode_index = [...]uint8{0, 6, 10}
+var _FileProcMode_index = [...]uint8{0, 6, 10, 14}
 
 func (i FileProcMode) String() string {
 	if i < 0 || i >= FileProcMode(len(_FileProcMode_index)-1) {
