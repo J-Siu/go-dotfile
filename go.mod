@@ -1,8 +1,9 @@
 module github.com/J-Siu/go-dotfile
 
-go 1.24.5
+go 1.25.1
 
 require (
+	github.com/J-Siu/go-basestruct v1.0.0
 	github.com/J-Siu/go-helper v1.1.10
 	github.com/edwardrf/symwalk v0.1.0
 	github.com/spf13/cobra v1.9.1

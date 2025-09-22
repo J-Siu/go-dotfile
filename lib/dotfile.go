@@ -19,16 +19,144 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
+
 package lib
 
 import (
 	"os"
 	"path"
 	"strings"
+	"time"
 
+	"github.com/J-Siu/go-basestruct"
 	"github.com/J-Siu/go-helper"
 	"github.com/edwardrf/symwalk"
 )
+
+type FileProcMode int8
+
+const (
+	Append FileProcMode = iota // Processing mode for TypeDotfile.Mode
+	Copy                       // Processing mode for TypeDotfile.Mode
+)
+
+type TypeDotfile struct {
+	basestruct.Base
+
+	Dirs    []string     `json:"dirs,omitempty"`
+	Files   []string     `json:"files,omitempty"`
+	DirDest string       `json:"dir_dest,omitempty"`
+	DirSrc  string       `json:"dir_src,omitempty"`
+	Mode    FileProcMode `json:"mode,omitempty"`
+}
+
+func (df *TypeDotfile) New(dirSrc string, dirDest string, mode FileProcMode) {
+	df.Initialized = true
+	df.MyType = "TypeConf"
+	prefix := df.MyType + ".Init"
+
+	if !(mode == Append || mode == Copy) {
+		helper.Report("mode error", prefix, false, true)
+		return
+	}
+
+	df.DirDest = dirDest
+	df.DirSrc = dirSrc
+	df.Mode = mode
+
+	err := os.Chdir(df.DirSrc)
+	if err == nil {
+		df.Dirs, df.Files = dirFileGet(".")
+	}
+	helper.ReportDebug(df, prefix+" Dotfile", false, false)
+}
+
+func (df *TypeDotfile) Run() {
+	prefix := df.MyType + ".Process"
+	var err error
+	for _, fileDir := range df.Dirs {
+		err = dirCreateHidden(fileDir, df.DirDest)
+		if err != nil {
+			os.Exit(1)
+		}
+	}
+	// Append/Copy files
+	for _, filepathSrc := range df.Files {
+		filepathDest := path.Join(df.DirDest, pathHide(filepathSrc))
+		err = df.ProcessFile(path.Join(df.DirSrc, filepathSrc), filepathDest)
+		helper.ErrsQueue(err, prefix)
+	}
+}
+
+// Process file base on Mode(append|copy)
+//
+// Not using TypeDotfile.Err
+func (df *TypeDotfile) ProcessFile(src string, dest string) (err error) {
+	prefix := df.MyType + ".ProcessFile"
+
+	// Destination FileMode
+	fileMode := os.O_CREATE | os.O_WRONLY
+	if df.Mode == Append {
+		fileMode |= os.O_APPEND
+	}
+	if df.Mode == Copy {
+		changed, err := fileChanged(src, dest)
+		if err != nil || !changed {
+			return err // skip if dest file same as src file
+		}
+		fileMode |= os.O_TRUNC
+	}
+
+	srcInfo, err := os.Stat(src)
+	if err != nil {
+		return err
+	}
+	srcPermission := srcInfo.Mode()
+	srcModTime := srcInfo.ModTime()
+
+	// Read source file
+	data, err := os.ReadFile(src)
+	if err != nil {
+		return err
+	}
+
+	// Open destination file
+	f, err := os.OpenFile(dest, fileMode, srcPermission)
+	if err != nil {
+		return err
+	}
+
+	// Append: add newline to destination file
+	if df.Mode == Append {
+		_, err = f.Write([]byte("\n"))
+		if err != nil {
+			return err
+		}
+	}
+
+	// Append source content to destination file
+	_, err = f.Write(data)
+	if err != nil {
+		return err
+	}
+
+	f.Close()
+
+	// Set dest permission
+	fpStr := ".........."
+	if df.Mode == Copy {
+		os.Chtimes(dest, srcModTime, srcModTime)
+		fpStr = srcPermission.String() + "  "
+	}
+
+	if Flag.Debug || Flag.Verbose {
+		if Flag.Debug {
+		}
+		helper.Report(fpStr+" "+df.Mode.String()+" "+src+" -> "+dest, prefix, false, true)
+	}
+
+	return err
+}
 
 // Array contains
 func contains[T comparable](arr []T, x T) bool {
@@ -109,135 +237,28 @@ func pathHide(p string) string {
 	return "." + p
 }
 
-const (
-	ProcModeAppend string = "append" // Processing mode for TypeDotfile.Mode
-	ProcModeCopy   string = "copy"   // Processing mode for TypeDotfile.Mode
-)
+// False: if (src and dst have same modification time and size)
+//
+// True: else
+func fileChanged(src string, dst string) (changed bool, err error) {
+	var (
+		infoDst os.FileInfo
+		infoSrc os.FileInfo
+	)
 
-type TypeDotfile struct {
-	Err    error
-	myType string
-	init   bool
+	changed = true
 
-	Dirs    []string
-	Files   []string
-	DirDest string
-	DirSrc  string
-	Mode    string // modeAppend | modeCopy
-}
-
-func (df *TypeDotfile) Init(dirSrc string, dirDest string, mode string) {
-	df.init = true
-	df.myType = "TypeConf"
-	prefix := df.myType + ".Init"
-
-	if !(mode == ProcModeAppend || mode == ProcModeCopy) {
-		helper.Report("mode error", prefix, false, true)
-		return
-	}
-
-	df.DirDest = dirDest
-	df.DirSrc = dirSrc
-	df.Mode = mode
-
-	err := os.Chdir(df.DirSrc)
+	infoSrc, err = os.Stat(src)
 	if err == nil {
-		df.Dirs, df.Files = dirFileGet(".")
-	}
-	helper.ReportDebug(df, prefix+" Dotfile", false, false)
-	df.ProcessCheckMode()
-}
-
-func (df *TypeDotfile) Process() {
-	prefix := df.myType + ".Process"
-	var err error
-	df.ProcessCheckMode()
-	for _, fileDir := range df.Dirs {
-		err = dirCreateHidden(fileDir, df.DirDest)
-		if err != nil {
-			os.Exit(1)
-		}
-	}
-	// Append/Copy files
-	for _, filepathSrc := range df.Files {
-		filepathDest := path.Join(df.DirDest, pathHide(filepathSrc))
-		err = df.ProcessFile(path.Join(df.DirSrc, filepathSrc), filepathDest)
-		helper.ErrsQueue(err, prefix)
-	}
-}
-
-// Mode must be set
-//
-// If Mode != ProcModeAppend|ProcModeCopy then force exit
-func (df *TypeDotfile) ProcessCheckMode() {
-	prefix := df.myType + ".CheckMode"
-	switch df.Mode {
-	case ProcModeAppend:
-	case ProcModeCopy:
-	default:
-		helper.Report(df.myType+".Mode error: "+df.Mode, prefix, false, true)
-		os.Exit(1)
-	}
-}
-
-// Process file base on Mode(append|copy)
-//
-// Not using TypeDotfile.Err
-func (df *TypeDotfile) ProcessFile(src string, dest string) error {
-	prefix := df.myType + ".ProcessFile"
-	// Read source file
-	data, err := os.ReadFile(src)
-	if err != nil {
-		return err
+		infoDst, err = os.Stat(dst)
 	}
 
-	fileMode := os.O_CREATE | os.O_WRONLY
-	if df.Mode == ProcModeAppend {
-		fileMode |= os.O_APPEND
-	}
-	if df.Mode == ProcModeCopy {
-		fileMode |= os.O_TRUNC
-	}
-	info, err := os.Stat(src)
-	if err != nil {
-		return err
-	}
-	filePermission := info.Mode()
-
-	// Open destination file with append
-	f, err := os.OpenFile(dest, fileMode, filePermission)
-	if err != nil {
-		return err
-	}
-
-	// Append newline to destination file
-	if df.Mode == ProcModeAppend {
-		_, err = f.Write([]byte("\n"))
-		if err != nil {
-			return err
+	if err == nil {
+		if time.Time.Equal(infoDst.ModTime(), infoSrc.ModTime()) &&
+			infoDst.Size() == infoSrc.Size() {
+			changed = false
 		}
 	}
 
-	// Append source content to destination file
-	_, err = f.Write(data)
-	if err != nil {
-		return err
-	}
-
-	f.Close()
-
-	// Set dest permission
-	fpStr := ".........."
-	if df.Mode == ProcModeCopy {
-		err = os.Chmod(dest, filePermission)
-		fpStr = filePermission.String() + "  "
-	}
-
-	if Flag.Debug || Flag.Verbose {
-		if Flag.Debug {
-		}
-		helper.Report(fpStr+" "+df.Mode+" "+src+" -> "+dest, prefix, false, true)
-	}
-
-	return err
+	return changed, err
 }

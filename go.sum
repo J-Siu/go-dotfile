@@ -1,3 +1,5 @@
+github.com/J-Siu/go-basestruct v1.0.0 h1:Ge0PuVnkhbsEDDYkX7GI3ccL3ahrOnQsv4RXNBl2Q7M=
+github.com/J-Siu/go-basestruct v1.0.0/go.mod h1:HDYO0KpE3MRbTFv4QvAS47USj+s1b2kftvPWq2hVJtA=
 github.com/J-Siu/go-helper v1.1.10 h1:tmNyFs5sJqPnE/7rshEfcyhC82MPEt2Is4FVpI7wPrU=
 github.com/J-Siu/go-helper v1.1.10/go.mod h1:PkBVY3EdVhAPE29H1Mx+nz1j01ymxy91VZV7VwHlsbA=
 github.com/cpuguy83/go-md2man/v2 v2.0.6/go.mod h1:oOW0eioCTA6cOiMLiUPZOpcVxMig6NIQQ7OS05n1F4g=

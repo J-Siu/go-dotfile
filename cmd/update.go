@@ -19,6 +19,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
+
 package cmd
 
 import (
@@ -35,17 +36,17 @@ var updateCmd = &cobra.Command{
 		// Process copy
 		for _, dir := range lib.Conf.DirCP {
 			var df lib.TypeDotfile
-			df.Init(dir, lib.Conf.DirDest, lib.ProcModeCopy)
+			df.New(dir, lib.Conf.DirDest, lib.Copy)
 			if !lib.FlagUpdate.Dryrun {
-				df.Process()
+				df.Run()
 			}
 		}
 		// Process append
 		for _, dir := range lib.Conf.DirAP {
 			var df lib.TypeDotfile
-			df.Init(dir, lib.Conf.DirDest, lib.ProcModeAppend)
+			df.New(dir, lib.Conf.DirDest, lib.Append)
 			if !lib.FlagUpdate.Dryrun {
-				df.Process()
+				df.Run()
 			}
 		}
 	},

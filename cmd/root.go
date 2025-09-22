@@ -19,6 +19,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
+
 package cmd
 
 import (
@@ -38,7 +39,7 @@ var rootCmd = &cobra.Command{
 		helper.Debug = lib.Flag.Debug
 		helper.ReportDebug(lib.Version, "Version", false, true)
 		helper.ReportDebug(&lib.Flag, "Flag", false, false)
-		lib.Conf.Init()
+		lib.Conf.New()
 	},
 	PersistentPostRun: func(cmd *cobra.Command, args []string) {
 		helper.Report(helper.Errs, "Errors", true, false)

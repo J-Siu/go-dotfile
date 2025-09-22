@@ -19,11 +19,13 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
+
 package lib
 
 import (
 	"os"
 
+	"github.com/J-Siu/go-basestruct"
 	"github.com/J-Siu/go-helper"
 	"github.com/spf13/viper"
 )
@@ -39,9 +41,7 @@ const (
 )
 
 type TypeConf struct {
-	Err    error
-	init   bool
-	myType string
+	basestruct.Base
 
 	DirAP    []string `json:"DirAP"`
 	DirCP    []string `json:"DirCP"`
@@ -51,10 +51,10 @@ type TypeConf struct {
 	FileSkip []string `json:"FileSkip"`
 }
 
-func (c *TypeConf) Init() {
-	c.init = true
-	c.myType = "TypeConf"
-	prefix := c.myType + ".Init"
+func (c *TypeConf) New() {
+	c.Initialized = true
+	c.MyType = "TypeConf"
+	prefix := c.MyType + ".Init"
 
 	c.setDefault()
 	helper.ReportDebug(c.FileConf, prefix+": Config file", false, true)
@@ -74,8 +74,8 @@ func (c *TypeConf) Init() {
 }
 
 func (c *TypeConf) readFileConf() {
-	c.myType = "TypeConf"
-	prefix := c.myType + ".readFileConf"
+	c.MyType = "TypeConf"
+	prefix := c.MyType + ".readFileConf"
 
 	viper.SetConfigType("json")
 	viper.SetConfigFile(helper.TildeEnvExpand(Conf.FileConf))
