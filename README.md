@@ -102,6 +102,11 @@ ls -a $HOME/tmp
 - v1.1.0
   - Skip copy if source and destination files have same modification time and size
   - Copy source file modification time to destination file
+- v1.1.1
+  - TypeDotfile
+    - fix MyType mismatch
+  - fileChanged
+    - fix logical err: should ignore destination file stat() err
 
 ### License
 

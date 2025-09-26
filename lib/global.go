@@ -23,7 +23,7 @@ THE SOFTWARE.
 package lib
 
 var (
-	Version = "v1.1.0"
+	Version = "v1.1.1"
 
 	Conf       TypeConf
 	Flag       TypeFlag

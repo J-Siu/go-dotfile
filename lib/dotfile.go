@@ -54,7 +54,7 @@ type TypeDotfile struct {
 
 func (df *TypeDotfile) New(dirSrc string, dirDest string, mode FileProcMode) {
 	df.Initialized = true
-	df.MyType = "TypeConf"
+	df.MyType = "TypeDotfile"
 	prefix := df.MyType + ".Init"
 
 	if !(mode == Append || mode == Copy) {
@@ -251,6 +251,8 @@ func pathHide(p string) string {
 // False: if (src and dst have same modification time and size)
 //
 // True: else
+//
+// Ignore destination file stat() err
 func fileChanged(src string, dst string) (changed bool, err error) {
 	var (
 		infoDst os.FileInfo
@@ -262,13 +264,15 @@ func fileChanged(src string, dst string) (changed bool, err error) {
 	infoSrc, err = os.Stat(src)
 	if err == nil {
 		infoDst, err = os.Stat(dst)
-	}
 
-	if err == nil {
-		if time.Time.Equal(infoDst.ModTime(), infoSrc.ModTime()) &&
-			infoDst.Size() == infoSrc.Size() {
-			changed = false
+		if err == nil {
+			if time.Time.Equal(infoDst.ModTime(), infoSrc.ModTime()) &&
+				infoDst.Size() == infoSrc.Size() {
+				changed = false
+			}
 		}
+		// it is for destination file stat to fail
+		err = nil
 	}
 
 	return changed, err
