@@ -26,7 +26,8 @@ import (
 	"os"
 
 	"github.com/J-Siu/go-basestruct"
-	"github.com/J-Siu/go-helper"
+	"github.com/J-Siu/go-helper/v2/ezlog"
+	"github.com/J-Siu/go-helper/v2/file"
 	"github.com/spf13/viper"
 )
 
@@ -54,20 +55,22 @@ type TypeConf struct {
 func (c *TypeConf) New() {
 	c.Initialized = true
 	c.MyType = "TypeConf"
-	prefix := c.MyType + ".Init"
+	prefix := c.MyType + ".New"
 
 	c.setDefault()
-	helper.ReportDebug(c.FileConf, prefix+": Config file", false, true)
+	ezlog.Debug().Name(prefix).NameLn("Default").Msg(c).Out()
 
 	c.readFileConf()
-	helper.ReportDebug(c, prefix+": Raw", false, true)
+	ezlog.Debug().Name(prefix).NameLn("Raw").Msg(c).Out()
+
+	// TODO: add flag
 
 	c.expand()
-	helper.ReportDebug(c, prefix+": Expand", false, true)
+	ezlog.Debug().Name(prefix).NameLn("Expand").Msg(c).Out()
 
 	// Check DirDest
-	if !DirExists(c.DirDest) {
-		helper.Report("DirDest does not exist: "+c.DirDest, prefix, false, true)
+	if !file.IsDir(c.DirDest) {
+		ezlog.Err().Name(prefix).Name("DirDest does not exist").Msg(c.DirDest).Out()
 		os.Exit(1)
 	}
 
@@ -78,14 +81,14 @@ func (c *TypeConf) readFileConf() {
 	prefix := c.MyType + ".readFileConf"
 
 	viper.SetConfigType("json")
-	viper.SetConfigFile(helper.TildeEnvExpand(Conf.FileConf))
+	viper.SetConfigFile(file.TildeEnvExpand(c.FileConf))
 	viper.AutomaticEnv()
 	c.Err = viper.ReadInConfig()
 
 	if c.Err == nil {
 		c.Err = viper.Unmarshal(&c)
 	} else {
-		helper.Report(c.Err.Error(), prefix, true, true)
+		ezlog.Debug().Name(prefix).Msg(c.Err).Out()
 		os.Exit(1)
 	}
 }
@@ -99,18 +102,18 @@ func (c *TypeConf) setDefault() {
 }
 
 func (c *TypeConf) expand() {
-	c.DirDest = helper.TildeEnvExpand(c.DirDest)
-	c.FileConf = helper.TildeEnvExpand(c.FileConf)
+	c.DirDest = file.TildeEnvExpand(c.DirDest)
+	c.FileConf = file.TildeEnvExpand(c.FileConf)
 	for i := range c.DirAP {
-		c.DirAP[i] = helper.TildeEnvExpand(c.DirAP[i])
+		c.DirAP[i] = file.TildeEnvExpand(c.DirAP[i])
 	}
 	for i := range c.DirCP {
-		c.DirCP[i] = helper.TildeEnvExpand(c.DirCP[i])
+		c.DirCP[i] = file.TildeEnvExpand(c.DirCP[i])
 	}
 	for i := range c.DirSkip {
-		c.DirSkip[i] = helper.TildeEnvExpand(c.DirSkip[i])
+		c.DirSkip[i] = file.TildeEnvExpand(c.DirSkip[i])
 	}
 	for i := range c.FileSkip {
-		c.FileSkip[i] = helper.TildeEnvExpand(c.FileSkip[i])
+		c.FileSkip[i] = file.TildeEnvExpand(c.FileSkip[i])
 	}
 }

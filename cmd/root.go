@@ -26,23 +26,36 @@ import (
 	"os"
 	"runtime"
 
+	"github.com/J-Siu/go-dotfile/global"
 	"github.com/J-Siu/go-dotfile/lib"
-	"github.com/J-Siu/go-helper"
+	"github.com/J-Siu/go-helper/v2/errs"
+	"github.com/J-Siu/go-helper/v2/ezlog"
 	"github.com/spf13/cobra"
 )
 
 var rootCmd = &cobra.Command{
 	Use:     "go-dotfile",
 	Short:   "A dotfile manager",
-	Version: lib.Version,
+	Version: global.Version,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
-		helper.Debug = lib.Flag.Debug
-		helper.ReportDebug(lib.Version, "Version", false, true)
-		helper.ReportDebug(&lib.Flag, "Flag", false, false)
-		lib.Conf.New()
+		ezlog.SetLogLevel(ezlog.ErrLevel)
+		if global.Flag.Debug {
+			ezlog.SetLogLevel(ezlog.DebugLevel)
+		}
+		if global.Flag.Trace {
+			ezlog.SetLogLevel(ezlog.TraceLevel)
+		}
+		ezlog.Debug().
+			Name("Version").MsgLn("global.Version").
+			NameLn("Flag:").
+			Msg(&global.Flag).
+			Out()
+		global.Conf.New()
 	},
 	PersistentPostRun: func(cmd *cobra.Command, args []string) {
-		helper.Report(helper.Errs, "Errors", true, false)
+		if !errs.IsEmpty() {
+			ezlog.Err().NameLn("Error:").Msg(errs.Errs).Out()
+		}
 	},
 }
 
@@ -58,10 +71,11 @@ func init() {
 	case "darwin":
 	case "linux":
 	default:
-		helper.Report("Only support Linux and MacOS.", "", false, true)
+		ezlog.Log().Msg("Only support Linux and MacOS.").Out()
 		os.Exit(1)
 	}
-	rootCmd.PersistentFlags().BoolVarP(&lib.Flag.Debug, "debug", "d", false, "Enable debug")
-	rootCmd.PersistentFlags().BoolVarP(&lib.Flag.Verbose, "verbose", "v", false, "Verbose")
-	rootCmd.PersistentFlags().StringVarP(&lib.Conf.FileConf, "config", "c", lib.Default.FileConf, "Config file")
+	rootCmd.PersistentFlags().BoolVarP(&global.Flag.Debug, "debug", "d", false, "Enable debug")
+	rootCmd.PersistentFlags().BoolVarP(&global.Flag.Trace, "trace", "t", false, "Enable trace")
+	rootCmd.PersistentFlags().BoolVarP(&global.Flag.Verbose, "verbose", "v", false, "Verbose")
+	rootCmd.PersistentFlags().StringVarP(&global.Conf.FileConf, "config", "c", lib.Default.FileConf, "Config file")
 }

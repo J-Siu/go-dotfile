@@ -27,10 +27,12 @@ import (
 	"os"
 	"path"
 	"strings"
-	"time"
 
 	"github.com/J-Siu/go-basestruct"
-	"github.com/J-Siu/go-helper"
+	"github.com/J-Siu/go-helper/v2/errs"
+	"github.com/J-Siu/go-helper/v2/ezlog"
+	"github.com/J-Siu/go-helper/v2/file"
+	"github.com/J-Siu/go-helper/v2/str"
 	"github.com/edwardrf/symwalk"
 )
 
@@ -45,20 +47,28 @@ const (
 type TypeDotfile struct {
 	basestruct.Base
 
-	Dirs    []string     `json:"dirs,omitempty"`
-	Files   []string     `json:"files,omitempty"`
 	DirDest string       `json:"dir_dest,omitempty"`
 	DirSrc  string       `json:"dir_src,omitempty"`
+	Dirs    []string     `json:"dirs,omitempty"`
+	Files   []string     `json:"files,omitempty"`
 	Mode    FileProcMode `json:"mode,omitempty"`
+
+	DirSkip  *[]string
+	FileSkip *[]string
+	Verbose  bool
+
+	// Conf       *TypeConf
+	// Flag       *TypeFlag
+	// FlagUpdate *TypeFlagUpdate
 }
 
-func (df *TypeDotfile) New(dirSrc string, dirDest string, mode FileProcMode) {
+func (df *TypeDotfile) New(dirSrc string, dirDest string, mode FileProcMode, dirSkip, fileSkip *[]string, verbose bool) {
 	df.Initialized = true
 	df.MyType = "TypeDotfile"
-	prefix := df.MyType + ".Init"
+	prefix := df.MyType + ".New"
 
 	if !(mode == Append || mode == Copy) {
-		helper.Report("mode error", prefix, false, true)
+		ezlog.Err().Name(prefix).Name("Mode error").Msg(mode).Out()
 		return
 	}
 
@@ -66,28 +76,36 @@ func (df *TypeDotfile) New(dirSrc string, dirDest string, mode FileProcMode) {
 	df.DirSrc = dirSrc
 	df.Mode = mode
 
+	df.DirSkip = dirSkip
+	df.FileSkip = fileSkip
+	df.Verbose = verbose
+
+	// df.Conf = conf
+	// df.Flag = flag
+	// df.FlagUpdate = flagUpdate
+
 	// cd to simplify path handling
 	err := os.Chdir(df.DirSrc)
 	if err == nil {
-		df.Dirs, df.Files = dirFileGet(".")
+		df.Dirs, df.Files = df.dirFileGet(".")
 	}
-	helper.ReportDebug(df, prefix+" Dotfile", false, false)
+	ezlog.Debug().Name(prefix).Msg(df).Out()
 }
 
 func (df *TypeDotfile) Run() {
-	prefix := df.MyType + ".Process"
-	var err error
+	prefix := df.MyType + ".Run"
+	var e error
 	for _, fileDir := range df.Dirs {
-		err = dirCreateHidden(fileDir, df.DirDest)
-		if err != nil {
+		e = dirCreateHidden(fileDir, df.DirDest)
+		if e != nil {
 			os.Exit(1)
 		}
 	}
 	// Append/Copy files
 	for _, filepathSrc := range df.Files {
 		filepathDest := path.Join(df.DirDest, pathHide(filepathSrc))
-		err = df.processFile(path.Join(df.DirSrc, filepathSrc), filepathDest)
-		helper.ErrsQueue(err, prefix)
+		e = df.processFile(path.Join(df.DirSrc, filepathSrc), filepathDest)
+		errs.Queue(prefix, e)
 	}
 }
 
@@ -107,11 +125,8 @@ func (df *TypeDotfile) processFile(src string, dest string) (err error) {
 	}
 	if fileProcMode == Copy {
 		destFlag |= os.O_TRUNC
-		changed, err := fileChanged(src, dest)
-		if err != nil {
-			return err
-		}
-		if !changed {
+		same := file.FileSame(src, dest)
+		if same {
 			fileProcMode = Skip
 		}
 	}
@@ -160,10 +175,10 @@ func (df *TypeDotfile) processFile(src string, dest string) (err error) {
 	}
 
 	str := fmt.Sprintf("%-6s %s %s -> %s", fileProcMode.String(), filePermStr, src, dest)
-	if Flag.Debug {
-		helper.Report(str, prefix, false, true)
-	} else if Flag.Verbose {
-		fmt.Println(str)
+	if ezlog.GetLogLevel() >= ezlog.DebugLevel {
+		ezlog.Debug().Name(prefix).Msg(str).Out()
+	} else if df.Verbose {
+		ezlog.Log().Msg(str).Out()
 	}
 
 	return err
@@ -179,60 +194,37 @@ func contains[T comparable](arr []T, x T) bool {
 	return false
 }
 
-// Array of string contains a substring
-func containsArraySubString(strArray []string, str string) bool {
-	// prefix := "ContainsArraySubString"
-	// helper.ReportDebug(str, prefix, false, true)
-	for _, s := range strArray {
-		if strings.Contains(str, s) {
-			// helper.ReportDebug(str+" ~= "+s, prefix, false, true)
-			return true
-		}
-	}
-	// helper.ReportDebug(str+" not match", prefix, false, true)
-	return false
-}
-
 // Create dotted/hidden directory
-func dirCreateHidden(dir string, dirBase string) (err error) {
+func dirCreateHidden(dir string, dirBase string) (e error) {
 	var prefix = "DirCreate"
 	if !(dir == "." || dir == "") {
 		dirDest := path.Join(dirBase, pathHide(dir))
-		if !DirExists(dirDest) {
-			err = os.MkdirAll(dirDest, os.ModePerm)
-			if err == nil {
-				helper.ReportDebug(dirDest, prefix+" created", true, true)
+		if !file.IsDir(dirDest) {
+			e = os.MkdirAll(dirDest, os.ModePerm)
+			if e == nil {
+				ezlog.Debug().Name(prefix).Name("created").Msg(dirDest).Out()
 			} else {
-				helper.Report(err, prefix+" ERROR", false, true)
+				ezlog.Err().Name(prefix).Name("ERR").Msg(e).Out()
 			}
 		}
 	}
-	return err
-}
-
-func DirExists(p string) bool {
-	if info, err := os.Stat(p); err == nil {
-		return info.IsDir()
-	}
-	return false
+	return e
 }
 
 // Get list of directory and list of file
-func dirFileGet(dir string) (dirs []string, files []string) {
+func (df *TypeDotfile) dirFileGet(dir string) (dirs []string, files []string) {
 	err := symwalk.Walk(dir, func(p string, info os.FileInfo, err error) error {
 		if info.IsDir() {
-			if p != "." && !containsArraySubString(Conf.DirSkip, "/"+p+"/") {
+			if p != "." && !str.ArrayContainsSubString(df.DirSkip, "/"+p+"/") {
 				dirs = append(dirs, p)
 			}
 		} else {
-			if !contains(Conf.FileSkip, path.Base(p)) && !containsArraySubString(Conf.DirSkip, "/"+p) {
+			if !contains(*df.FileSkip, path.Base(p)) && !str.ArrayContainsSubString(df.DirSkip, "/"+p) {
 				files = append(files, p)
 			}
 		}
 		return nil
 	})
-	// prefix := "dirFileGet"
-	// helper.Report(err, prefix, false, true)
 	if err == nil {
 		return dirs, files
 	} else {
@@ -246,34 +238,4 @@ func pathHide(p string) string {
 		return p
 	}
 	return "." + p
-}
-
-// False: if (src and dst have same modification time and size)
-//
-// True: else
-//
-// Ignore destination file stat() err
-func fileChanged(src string, dst string) (changed bool, err error) {
-	var (
-		infoDst os.FileInfo
-		infoSrc os.FileInfo
-	)
-
-	changed = true
-
-	infoSrc, err = os.Stat(src)
-	if err == nil {
-		infoDst, err = os.Stat(dst)
-
-		if err == nil {
-			if time.Time.Equal(infoDst.ModTime(), infoSrc.ModTime()) &&
-				infoDst.Size() == infoSrc.Size() {
-				changed = false
-			}
-		}
-		// it is for destination file stat to fail
-		err = nil
-	}
-
-	return changed, err
 }

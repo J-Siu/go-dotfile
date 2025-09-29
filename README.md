@@ -107,6 +107,8 @@ ls -a $HOME/tmp
     - fix MyType mismatch
   - fileChanged
     - fix logical err: should ignore destination file stat() err
+- v1.1.2
+  - Update to `go-helper/v2`
 
 ### License
 

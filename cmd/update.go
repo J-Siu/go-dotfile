@@ -23,6 +23,7 @@ THE SOFTWARE.
 package cmd
 
 import (
+	"github.com/J-Siu/go-dotfile/global"
 	"github.com/J-Siu/go-dotfile/lib"
 	"github.com/spf13/cobra"
 )
@@ -34,18 +35,18 @@ var updateCmd = &cobra.Command{
 	Short:   "Update dotfiles",
 	Run: func(cmd *cobra.Command, args []string) {
 		// Process copy
-		for _, dir := range lib.Conf.DirCP {
+		for _, dir := range global.Conf.DirCP {
 			var df lib.TypeDotfile
-			df.New(dir, lib.Conf.DirDest, lib.Copy)
-			if !lib.FlagUpdate.Dryrun {
+			df.New(dir, global.Conf.DirDest, lib.Copy, &global.Conf.DirSkip, &global.Conf.FileSkip, global.Flag.Verbose)
+			if !global.FlagUpdate.Dryrun {
 				df.Run()
 			}
 		}
 		// Process append
-		for _, dir := range lib.Conf.DirAP {
+		for _, dir := range global.Conf.DirAP {
 			var df lib.TypeDotfile
-			df.New(dir, lib.Conf.DirDest, lib.Append)
-			if !lib.FlagUpdate.Dryrun {
+			df.New(dir, global.Conf.DirDest, lib.Append, &global.Conf.DirSkip, &global.Conf.FileSkip, global.Flag.Verbose)
+			if !global.FlagUpdate.Dryrun {
 				df.Run()
 			}
 		}
@@ -54,5 +55,5 @@ var updateCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(updateCmd)
-	updateCmd.PersistentFlags().BoolVarP(&lib.FlagUpdate.Dryrun, "dryrun", "", false, "Dryrun")
+	updateCmd.PersistentFlags().BoolVarP(&global.FlagUpdate.Dryrun, "dryrun", "", false, "Dryrun")
 }

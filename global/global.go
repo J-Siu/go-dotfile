@@ -20,12 +20,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-package lib
+package global
+
+import "github.com/J-Siu/go-dotfile/lib"
 
 var (
-	Version = "v1.1.1"
+	Version = "v1.1.2"
 
-	Conf       TypeConf
-	Flag       TypeFlag
-	FlagUpdate TypeFlagUpdate
+	Conf       lib.TypeConf
+	Flag       lib.TypeFlag
+	FlagUpdate lib.TypeFlagUpdate
 )
