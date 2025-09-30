@@ -109,6 +109,8 @@ ls -a $HOME/tmp
     - fix logical err: should ignore destination file stat() err
 - v1.1.2
   - Update to `go-helper/v2`
+- v1.1.3
+  - Update to `go-helper/v2`
 
 ### License
 

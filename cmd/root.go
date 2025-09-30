@@ -45,16 +45,12 @@ var rootCmd = &cobra.Command{
 		if global.Flag.Trace {
 			ezlog.SetLogLevel(ezlog.TraceLevel)
 		}
-		ezlog.Debug().
-			Name("Version").MsgLn(global.Version).
-			NameLn("Flag").
-			Msg(&global.Flag).
-			Out()
+		ezlog.Debug().N("Version").Mn(global.Version).Nn("Flag").M(&global.Flag).Out()
 		global.Conf.New()
 	},
 	PersistentPostRun: func(cmd *cobra.Command, args []string) {
 		if !errs.IsEmpty() {
-			ezlog.Err().NameLn("Error:").Msg(errs.Errs).Out()
+			ezlog.Err().Nn("Error:").M(errs.Errs).Out()
 		}
 	},
 }
@@ -71,7 +67,7 @@ func init() {
 	case "darwin":
 	case "linux":
 	default:
-		ezlog.Log().Msg("Only support Linux and MacOS.").Out()
+		ezlog.Log().M("Only support Linux and MacOS.").Out()
 		os.Exit(1)
 	}
 	rootCmd.PersistentFlags().BoolVarP(&global.Flag.Debug, "debug", "d", false, "Enable debug")

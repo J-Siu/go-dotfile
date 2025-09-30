@@ -68,7 +68,7 @@ func (df *TypeDotfile) New(dirSrc string, dirDest string, mode FileProcMode, dir
 	prefix := df.MyType + ".New"
 
 	if !(mode == Append || mode == Copy) {
-		ezlog.Err().Name(prefix).Name("Mode error").Msg(mode).Out()
+		ezlog.Err().N(prefix).N("Mode error").M(mode).Out()
 		return
 	}
 
@@ -89,7 +89,7 @@ func (df *TypeDotfile) New(dirSrc string, dirDest string, mode FileProcMode, dir
 	if err == nil {
 		df.Dirs, df.Files = df.dirFileGet(".")
 	}
-	ezlog.Debug().Name(prefix).Msg(df).Out()
+	ezlog.Debug().N(prefix).M(df).Out()
 }
 
 func (df *TypeDotfile) Run() {
@@ -176,9 +176,9 @@ func (df *TypeDotfile) processFile(src string, dest string) (err error) {
 
 	str := fmt.Sprintf("%-6s %s %s -> %s", fileProcMode.String(), filePermStr, src, dest)
 	if ezlog.GetLogLevel() >= ezlog.DebugLevel {
-		ezlog.Debug().Name(prefix).Msg(str).Out()
+		ezlog.Debug().N(prefix).M(str).Out()
 	} else if df.Verbose {
-		ezlog.Log().Msg(str).Out()
+		ezlog.Log().M(str).Out()
 	}
 
 	return err
@@ -202,9 +202,9 @@ func dirCreateHidden(dir string, dirBase string) (e error) {
 		if !file.IsDir(dirDest) {
 			e = os.MkdirAll(dirDest, os.ModePerm)
 			if e == nil {
-				ezlog.Debug().Name(prefix).Name("created").Msg(dirDest).Out()
+				ezlog.Debug().N(prefix).N("created").M(dirDest).Out()
 			} else {
-				ezlog.Err().Name(prefix).Name("ERR").Msg(e).Out()
+				ezlog.Err().N(prefix).N("ERR").M(e).Out()
 			}
 		}
 	}

@@ -58,19 +58,19 @@ func (c *TypeConf) New() {
 	prefix := c.MyType + ".New"
 
 	c.setDefault()
-	ezlog.Debug().Name(prefix).NameLn("Default").Msg(c).Out()
+	ezlog.Debug().N(prefix).Nn("Default").M(c).Out()
 
 	c.readFileConf()
-	ezlog.Debug().Name(prefix).NameLn("Raw").Msg(c).Out()
+	ezlog.Debug().N(prefix).Nn("Raw").M(c).Out()
 
 	// TODO: add flag
 
 	c.expand()
-	ezlog.Debug().Name(prefix).NameLn("Expand").Msg(c).Out()
+	ezlog.Debug().N(prefix).Nn("Expand").M(c).Out()
 
 	// Check DirDest
 	if !file.IsDir(c.DirDest) {
-		ezlog.Err().Name(prefix).Name("DirDest does not exist").Msg(c.DirDest).Out()
+		ezlog.Err().N(prefix).N("DirDest does not exist").M(c.DirDest).Out()
 		os.Exit(1)
 	}
 
@@ -88,7 +88,7 @@ func (c *TypeConf) readFileConf() {
 	if c.Err == nil {
 		c.Err = viper.Unmarshal(&c)
 	} else {
-		ezlog.Debug().Name(prefix).Msg(c.Err).Out()
+		ezlog.Debug().N(prefix).M(c.Err).Out()
 		os.Exit(1)
 	}
 }
