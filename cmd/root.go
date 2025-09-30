@@ -46,8 +46,8 @@ var rootCmd = &cobra.Command{
 			ezlog.SetLogLevel(ezlog.TraceLevel)
 		}
 		ezlog.Debug().
-			Name("Version").MsgLn("global.Version").
-			NameLn("Flag:").
+			Name("Version").MsgLn(global.Version).
+			NameLn("Flag").
 			Msg(&global.Flag).
 			Out()
 		global.Conf.New()
