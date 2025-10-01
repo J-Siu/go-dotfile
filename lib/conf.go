@@ -25,7 +25,7 @@ package lib
 import (
 	"os"
 
-	"github.com/J-Siu/go-basestruct"
+	"github.com/J-Siu/go-helper/v2/basestruct"
 	"github.com/J-Siu/go-helper/v2/ezlog"
 	"github.com/J-Siu/go-helper/v2/file"
 	"github.com/spf13/viper"
@@ -42,7 +42,7 @@ const (
 )
 
 type TypeConf struct {
-	basestruct.Base
+	*basestruct.Base
 
 	DirAP    []string `json:"DirAP"`
 	DirCP    []string `json:"DirCP"`
@@ -52,68 +52,69 @@ type TypeConf struct {
 	FileSkip []string `json:"FileSkip"`
 }
 
-func (c *TypeConf) New() {
-	c.Initialized = true
-	c.MyType = "TypeConf"
-	prefix := c.MyType + ".New"
+func (t *TypeConf) New() {
+	t.Base = new(basestruct.Base)
+	t.Initialized = true
+	t.MyType = "TypeConf"
+	prefix := t.MyType + ".New"
 
-	c.setDefault()
-	ezlog.Debug().N(prefix).Nn("Default").M(c).Out()
+	t.setDefault()
+	ezlog.Debug().N(prefix).Nn("Default").M(t).Out()
 
-	c.readFileConf()
-	ezlog.Debug().N(prefix).Nn("Raw").M(c).Out()
+	t.readFileConf()
+	ezlog.Debug().N(prefix).Nn("Raw").M(t).Out()
 
 	// TODO: add flag
 
-	c.expand()
-	ezlog.Debug().N(prefix).Nn("Expand").M(c).Out()
+	t.expand()
+	ezlog.Debug().N(prefix).Nn("Expand").M(t).Out()
 
 	// Check DirDest
-	if !file.IsDir(c.DirDest) {
-		ezlog.Err().N(prefix).N("DirDest does not exist").M(c.DirDest).Out()
+	if !file.IsDir(t.DirDest) {
+		ezlog.Err().N(prefix).N("DirDest does not exist").M(t.DirDest).Out()
 		os.Exit(1)
 	}
 
 }
 
-func (c *TypeConf) readFileConf() {
-	c.MyType = "TypeConf"
-	prefix := c.MyType + ".readFileConf"
+func (t *TypeConf) readFileConf() {
+	t.MyType = "TypeConf"
+	prefix := t.MyType + ".readFileConf"
 
 	viper.SetConfigType("json")
-	viper.SetConfigFile(file.TildeEnvExpand(c.FileConf))
+	viper.SetConfigFile(file.TildeEnvExpand(t.FileConf))
 	viper.AutomaticEnv()
-	c.Err = viper.ReadInConfig()
+	t.Err = viper.ReadInConfig()
 
-	if c.Err == nil {
-		c.Err = viper.Unmarshal(&c)
+	if t.Err == nil {
+		t.Err = viper.Unmarshal(&t)
 	} else {
-		ezlog.Debug().N(prefix).M(c.Err).Out()
+		ezlog.Debug().N(prefix).M(t.Err).Out()
 		os.Exit(1)
 	}
 }
 
 // Should be called before reading config file
-func (c *TypeConf) setDefault() {
-	if c.FileConf == "" {
-		c.FileConf = Default.FileConf
+func (t *TypeConf) setDefault() {
+	if t.FileConf == "" {
+		t.FileConf = Default.FileConf
 	}
-	c.DirDest, _ = os.UserHomeDir()
+	t.DirDest, _ = os.UserHomeDir()
 }
 
-func (c *TypeConf) expand() {
-	c.DirDest = file.TildeEnvExpand(c.DirDest)
-	c.FileConf = file.TildeEnvExpand(c.FileConf)
-	for i := range c.DirAP {
-		c.DirAP[i] = file.TildeEnvExpand(c.DirAP[i])
+func (t *TypeConf) expand() {
+	t.DirDest = file.TildeEnvExpand(t.DirDest)
+	t.FileConf = file.TildeEnvExpand(t.FileConf)
+	for i := range t.DirAP {
+		t.DirAP[i] = file.TildeEnvExpand(t.DirAP[i])
 	}
-	for i := range c.DirCP {
-		c.DirCP[i] = file.TildeEnvExpand(c.DirCP[i])
+	for i := range t.DirCP {
+		t.DirCP[i] = file.TildeEnvExpand(t.DirCP[i])
 	}
-	for i := range c.DirSkip {
-		c.DirSkip[i] = file.TildeEnvExpand(c.DirSkip[i])
+	for i := range t.DirSkip {
+		t.DirSkip[i] = file.TildeEnvExpand(t.DirSkip[i])
 	}
-	for i := range c.FileSkip {
-		c.FileSkip[i] = file.TildeEnvExpand(c.FileSkip[i])
+	for i := range t.FileSkip {
+		t.FileSkip[i] = file.TildeEnvExpand(t.FileSkip[i])
 	}
 }

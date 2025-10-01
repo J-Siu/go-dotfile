@@ -28,7 +28,7 @@ import (
 	"path"
 	"strings"
 
-	"github.com/J-Siu/go-basestruct"
+	"github.com/J-Siu/go-helper/v2/basestruct"
 	"github.com/J-Siu/go-helper/v2/errs"
 	"github.com/J-Siu/go-helper/v2/ezlog"
 	"github.com/J-Siu/go-helper/v2/file"
@@ -45,7 +45,7 @@ const (
 )
 
 type TypeDotfile struct {
-	basestruct.Base
+	*basestruct.Base
 
 	DirDest string       `json:"dir_dest,omitempty"`
 	DirSrc  string       `json:"dir_src,omitempty"`
@@ -62,49 +62,50 @@ type TypeDotfile struct {
 	// FlagUpdate *TypeFlagUpdate
 }
 
-func (df *TypeDotfile) New(dirSrc string, dirDest string, mode FileProcMode, dirSkip, fileSkip *[]string, verbose bool) {
-	df.Initialized = true
-	df.MyType = "TypeDotfile"
-	prefix := df.MyType + ".New"
+func (t *TypeDotfile) New(dirSrc string, dirDest string, mode FileProcMode, dirSkip, fileSkip *[]string, verbose bool) {
+	t.Base = new(basestruct.Base)
+	t.Initialized = true
+	t.MyType = "TypeDotfile"
+	prefix := t.MyType + ".New"
 
 	if !(mode == Append || mode == Copy) {
 		ezlog.Err().N(prefix).N("Mode error").M(mode).Out()
 		return
 	}
 
-	df.DirDest = dirDest
-	df.DirSrc = dirSrc
-	df.Mode = mode
+	t.DirDest = dirDest
+	t.DirSrc = dirSrc
+	t.Mode = mode
 
-	df.DirSkip = dirSkip
-	df.FileSkip = fileSkip
-	df.Verbose = verbose
+	t.DirSkip = dirSkip
+	t.FileSkip = fileSkip
+	t.Verbose = verbose
 
 	// df.Conf = conf
 	// df.Flag = flag
 	// df.FlagUpdate = flagUpdate
 
 	// cd to simplify path handling
-	err := os.Chdir(df.DirSrc)
+	err := os.Chdir(t.DirSrc)
 	if err == nil {
-		df.Dirs, df.Files = df.dirFileGet(".")
+		t.Dirs, t.Files = t.dirFileGet(".")
 	}
-	ezlog.Debug().N(prefix).M(df).Out()
+	ezlog.Debug().N(prefix).M(t).Out()
 }
 
-func (df *TypeDotfile) Run() {
-	prefix := df.MyType + ".Run"
+func (t *TypeDotfile) Run() {
+	prefix := t.MyType + ".Run"
 	var e error
-	for _, fileDir := range df.Dirs {
-		e = dirCreateHidden(fileDir, df.DirDest)
+	for _, fileDir := range t.Dirs {
+		e = dirCreateHidden(fileDir, t.DirDest)
 		if e != nil {
 			os.Exit(1)
 		}
 	}
 	// Append/Copy files
-	for _, filepathSrc := range df.Files {
-		filepathDest := path.Join(df.DirDest, pathHide(filepathSrc))
-		e = df.processFile(path.Join(df.DirSrc, filepathSrc), filepathDest)
+	for _, filepathSrc := range t.Files {
+		filepathDest := path.Join(t.DirDest, pathHide(filepathSrc))
+		e = t.processFile(path.Join(t.DirSrc, filepathSrc), filepathDest)
 		errs.Queue(prefix, e)
 	}
 }
@@ -112,10 +113,10 @@ func (df *TypeDotfile) Run() {
 // Process file base on Mode(append|copy)
 //
 // Not using TypeDotfile.Err
-func (df *TypeDotfile) processFile(src string, dest string) (err error) {
-	prefix := df.MyType + ".ProcessFile"
+func (t *TypeDotfile) processFile(src string, dest string) (err error) {
+	prefix := t.MyType + ".ProcessFile"
 
-	fileProcMode := df.Mode
+	fileProcMode := t.Mode
 	filePermStr := ".........."
 
 	// Destination FileMode
@@ -177,7 +178,7 @@ func (df *TypeDotfile) processFile(src string, dest string) (err error) {
 	str := fmt.Sprintf("%-6s %s %s -> %s", fileProcMode.String(), filePermStr, src, dest)
 	if ezlog.GetLogLevel() >= ezlog.DebugLevel {
 		ezlog.Debug().N(prefix).M(str).Out()
-	} else if df.Verbose {
+	} else if t.Verbose {
 		ezlog.Log().M(str).Out()
 	}
 
@@ -212,14 +213,14 @@ func dirCreateHidden(dir string, dirBase string) (e error) {
 }
 
 // Get list of directory and list of file
-func (df *TypeDotfile) dirFileGet(dir string) (dirs []string, files []string) {
+func (t *TypeDotfile) dirFileGet(dir string) (dirs []string, files []string) {
 	err := symwalk.Walk(dir, func(p string, info os.FileInfo, err error) error {
 		if info.IsDir() {
-			if p != "." && !str.ArrayContainsSubString(df.DirSkip, "/"+p+"/") {
+			if p != "." && !str.ArrayContainsSubString(t.DirSkip, "/"+p+"/") {
 				dirs = append(dirs, p)
 			}
 		} else {
-			if !contains(*df.FileSkip, path.Base(p)) && !str.ArrayContainsSubString(df.DirSkip, "/"+p) {
+			if !contains(*t.FileSkip, path.Base(p)) && !str.ArrayContainsSubString(t.DirSkip, "/"+p) {
 				files = append(files, p)
 			}
 		}

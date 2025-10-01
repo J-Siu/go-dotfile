@@ -25,7 +25,7 @@ package global
 import "github.com/J-Siu/go-dotfile/lib"
 
 var (
-	Version = "v1.1.2"
+	Version = "v1.1.4"
 
 	Conf       lib.TypeConf
 	Flag       lib.TypeFlag

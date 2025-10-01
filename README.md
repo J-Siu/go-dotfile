@@ -111,6 +111,8 @@ ls -a $HOME/tmp
   - Update to `go-helper/v2`
 - v1.1.3
   - Update to `go-helper/v2`
+- v1.1.4
+  - Move to `go-helper/basestruct`
 
 ### License
 
