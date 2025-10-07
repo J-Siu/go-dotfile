@@ -38,12 +38,12 @@ var rootCmd = &cobra.Command{
 	Short:   "A dotfile manager",
 	Version: global.Version,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
-		ezlog.SetLogLevel(ezlog.ErrLevel)
+		ezlog.SetLogLevel(ezlog.ERR)
 		if global.Flag.Debug {
-			ezlog.SetLogLevel(ezlog.DebugLevel)
+			ezlog.SetLogLevel(ezlog.DEBUG)
 		}
 		if global.Flag.Trace {
-			ezlog.SetLogLevel(ezlog.TraceLevel)
+			ezlog.SetLogLevel(ezlog.TRACE)
 		}
 		ezlog.Debug().N("Version").Mn(global.Version).Nn("Flag").M(&global.Flag).Out()
 		global.Conf.New()
