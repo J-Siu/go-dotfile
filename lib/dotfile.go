@@ -44,76 +44,68 @@ const (
 	Skip
 )
 
-type TypeDotfile struct {
-	*basestruct.Base
-
-	DirDest string       `json:"dir_dest,omitempty"`
-	DirSrc  string       `json:"dir_src,omitempty"`
-	Dirs    []string     `json:"dirs,omitempty"`
-	Files   []string     `json:"files,omitempty"`
-	Mode    FileProcMode `json:"mode,omitempty"`
-
-	DirSkip  *[]string
-	FileSkip *[]string
-	Verbose  bool
-
-	// Conf       *TypeConf
-	// Flag       *TypeFlag
-	// FlagUpdate *TypeFlagUpdate
+type TypeDotfileProperty struct {
+	DirDest  *string      `json:"DirDest"`
+	DirSkip  *[]string    `json:"DirSkip"`
+	DirSrc   *string      `json:"DirSrc"`
+	FileSkip *[]string    `json:"FileSkip"`
+	Mode     FileProcMode `json:"Mode"`
+	Verbose  bool         `json:"Verbose"`
 }
 
-func (t *TypeDotfile) New(dirSrc string, dirDest string, mode FileProcMode, dirSkip, fileSkip *[]string, verbose bool) {
+type TypeDotfile struct {
+	*basestruct.Base
+	*TypeDotfileProperty
+	// --- calculate in Run()
+	Dirs  *[]string `json:"Dirs"`
+	Files *[]string `json:"Files"`
+}
+
+func (t *TypeDotfile) New(property *TypeDotfileProperty) {
 	t.Base = new(basestruct.Base)
 	t.Initialized = true
 	t.MyType = "TypeDotfile"
 	prefix := t.MyType + ".New"
 
-	if !(mode == Append || mode == Copy) {
-		ezlog.Err().N(prefix).N("Mode error").M(mode).Out()
-		return
-	}
+	t.TypeDotfileProperty = property
 
-	t.DirDest = dirDest
-	t.DirSrc = dirSrc
-	t.Mode = mode
-
-	t.DirSkip = dirSkip
-	t.FileSkip = fileSkip
-	t.Verbose = verbose
-
-	// df.Conf = conf
-	// df.Flag = flag
-	// df.FlagUpdate = flagUpdate
-
-	// cd to simplify path handling
-	err := os.Chdir(t.DirSrc)
-	if err == nil {
-		t.Dirs, t.Files = t.dirFileGet(".")
-	}
 	ezlog.Debug().N(prefix).M(t).Out()
 }
 
 func (t *TypeDotfile) Run() {
 	prefix := t.MyType + ".Run"
 	var e error
-	for _, fileDir := range t.Dirs {
-		e = dirCreateHidden(fileDir, t.DirDest)
-		if e != nil {
-			os.Exit(1)
+	// cd to simplify path handling
+	t.Err = os.Chdir(*t.DirSrc)
+	if t.Err == nil {
+		t.Dirs, t.Files = t.dirFileGet(".")
+		ezlog.Debug().N(prefix).Nn("Dirs").M(t.Dirs).Out()
+		ezlog.Debug().N(prefix).Nn("Files").M(t.Files).Out()
+	}
+	// create dirs
+	if t.Err == nil && t.Dirs != nil {
+		for _, fileDir := range *t.Dirs {
+			t.Err = dirCreateHidden(fileDir, *t.DirDest)
+			if t.Err != nil {
+				errs.Queue(prefix, t.Err)
+				break
+			}
 		}
 	}
 	// Append/Copy files
-	for _, filepathSrc := range t.Files {
-		filepathDest := path.Join(t.DirDest, pathHide(filepathSrc))
-		e = t.processFile(path.Join(t.DirSrc, filepathSrc), filepathDest)
-		errs.Queue(prefix, e)
+	if t.Err == nil && t.Files != nil {
+		for _, filepathSrc := range *t.Files {
+			filepathDest := path.Join(*t.DirDest, pathHide(filepathSrc))
+			e = t.processFile(path.Join(*t.DirSrc, filepathSrc), filepathDest)
+			errs.Queue(prefix, e)
+		}
 	}
 }
 
 // Process file base on Mode(append|copy)
 //
 // Not using TypeDotfile.Err
-func (t *TypeDotfile) processFile(src string, dest string) (err error) {
+func (t *TypeDotfile) processFile(src, dest string) (err error) {
 	prefix := t.MyType + ".ProcessFile"
 
 	fileProcMode := t.Mode
@@ -176,7 +168,7 @@ func (t *TypeDotfile) processFile(src string, dest string) (err error) {
 	}
 
 	str := fmt.Sprintf("%-6s %s %s -> %s", fileProcMode.String(), filePermStr, src, dest)
-	if ezlog.GetLogLevel() >= ezlog.DebugLevel {
+	if ezlog.GetLogLevel() >= ezlog.DEBUG {
 		ezlog.Debug().N(prefix).M(str).Out()
 	} else if t.Verbose {
 		ezlog.Log().M(str).Out()
@@ -196,7 +188,7 @@ func contains[T comparable](arr []T, x T) bool {
 }
 
 // Create dotted/hidden directory
-func dirCreateHidden(dir string, dirBase string) (e error) {
+func dirCreateHidden(dir, dirBase string) (e error) {
 	var prefix = "DirCreate"
 	if !(dir == "." || dir == "") {
 		dirDest := path.Join(dirBase, pathHide(dir))
@@ -213,8 +205,12 @@ func dirCreateHidden(dir string, dirBase string) (e error) {
 }
 
 // Get list of directory and list of file
-func (t *TypeDotfile) dirFileGet(dir string) (dirs []string, files []string) {
-	err := symwalk.Walk(dir, func(p string, info os.FileInfo, err error) error {
+func (t *TypeDotfile) dirFileGet(dir string) (*[]string, *[]string) {
+	var (
+		dirs  []string
+		files []string
+	)
+	symwalk.Walk(dir, func(p string, info os.FileInfo, err error) error {
 		if info.IsDir() {
 			if p != "." && !str.ArrayContainsSubString(t.DirSkip, "/"+p+"/") {
 				dirs = append(dirs, p)
@@ -226,11 +222,7 @@ func (t *TypeDotfile) dirFileGet(dir string) (dirs []string, files []string) {
 		}
 		return nil
 	})
-	if err == nil {
-		return dirs, files
-	} else {
-		return []string{}, []string{}
-	}
+	return &dirs, &files
 }
 
 // Add "."" in front of path if there is none
