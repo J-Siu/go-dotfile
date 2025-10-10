@@ -64,8 +64,6 @@ func (t *TypeConf) New() {
 	t.readFileConf()
 	ezlog.Debug().N(prefix).Nn("Raw").M(t).Out()
 
-	// TODO: add flag
-
 	t.expand()
 	ezlog.Debug().N(prefix).Nn("Expand").M(t).Out()
 
@@ -74,7 +72,6 @@ func (t *TypeConf) New() {
 		ezlog.Err().N(prefix).N("DirDest does not exist").M(t.DirDest).Out()
 		os.Exit(1)
 	}
-
 }
 
 func (t *TypeConf) readFileConf() {

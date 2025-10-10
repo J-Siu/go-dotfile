@@ -42,7 +42,7 @@ var updateCmd = &cobra.Command{
 		}
 
 		// Process copy
-		property.Mode = lib.Copy
+		property.Mode = lib.COPY
 		for _, dir := range global.Conf.DirCP {
 			var df lib.TypeDotfile
 			property.DirSrc = &dir
@@ -52,7 +52,7 @@ var updateCmd = &cobra.Command{
 			}
 		}
 		// Process append
-		property.Mode = lib.Append
+		property.Mode = lib.APPEND
 		for _, dir := range global.Conf.DirAP {
 			var df lib.TypeDotfile
 			property.DirSrc = &dir

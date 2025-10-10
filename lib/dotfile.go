@@ -39,9 +39,9 @@ import (
 type FileProcMode int8
 
 const (
-	Append FileProcMode = iota // Processing mode for TypeDotfile.Mode
-	Copy                       // Processing mode for TypeDotfile.Mode
-	Skip
+	APPEND FileProcMode = iota // Processing mode for TypeDotfile.Mode
+	COPY                       // Processing mode for TypeDotfile.Mode
+	SKIP
 )
 
 type TypeDotfileProperty struct {
@@ -106,25 +106,25 @@ func (t *TypeDotfile) Run() {
 //
 // Not using TypeDotfile.Err
 func (t *TypeDotfile) processFile(src, dest string) (err error) {
-	prefix := t.MyType + ".ProcessFile"
+	prefix := t.MyType + ".processFile"
 
 	fileProcMode := t.Mode
 	filePermStr := ".........."
 
 	// Destination FileMode
 	destFlag := os.O_CREATE | os.O_WRONLY
-	if fileProcMode == Append {
+	if fileProcMode == APPEND {
 		destFlag |= os.O_APPEND
 	}
-	if fileProcMode == Copy {
+	if fileProcMode == COPY {
 		destFlag |= os.O_TRUNC
 		same := file.FileSame(src, dest)
 		if same {
-			fileProcMode = Skip
+			fileProcMode = SKIP
 		}
 	}
 
-	if fileProcMode != Skip {
+	if fileProcMode != SKIP {
 		srcInfo, err := os.Stat(src)
 		if err != nil {
 			return err
@@ -145,7 +145,7 @@ func (t *TypeDotfile) processFile(src, dest string) (err error) {
 		}
 
 		// Append: add newline to destination file
-		if fileProcMode == Append {
+		if fileProcMode == APPEND {
 			_, err = f.Write([]byte("\n"))
 			if err != nil {
 				return err
@@ -161,7 +161,7 @@ func (t *TypeDotfile) processFile(src, dest string) (err error) {
 		f.Close()
 
 		// Set dest permission
-		if fileProcMode == Copy {
+		if fileProcMode == COPY {
 			os.Chtimes(dest, srcModTime, srcModTime)
 			filePermStr = srcPermission.String()
 		}
@@ -212,11 +212,11 @@ func (t *TypeDotfile) dirFileGet(dir string) (*[]string, *[]string) {
 	)
 	symwalk.Walk(dir, func(p string, info os.FileInfo, err error) error {
 		if info.IsDir() {
-			if p != "." && !str.ArrayContainsSubString(t.DirSkip, "/"+p+"/") {
+			if p != "." && !str.ArrayContainsSubString(t.DirSkip, "/"+p+"/", false) {
 				dirs = append(dirs, p)
 			}
 		} else {
-			if !contains(*t.FileSkip, path.Base(p)) && !str.ArrayContainsSubString(t.DirSkip, "/"+p) {
+			if !contains(*t.FileSkip, path.Base(p)) && !str.ArrayContainsSubString(t.DirSkip, "/"+p, false) {
 				files = append(files, p)
 			}
 		}

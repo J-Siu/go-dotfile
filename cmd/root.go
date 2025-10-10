@@ -49,8 +49,8 @@ var rootCmd = &cobra.Command{
 		global.Conf.New()
 	},
 	PersistentPostRun: func(cmd *cobra.Command, args []string) {
-		if !errs.IsEmpty() {
-			ezlog.Err().Nn("Error:").M(errs.Errs).Out()
+		if errs.NotEmpty() {
+			ezlog.Err().M(errs.Errs).Out()
 		}
 	},
 }

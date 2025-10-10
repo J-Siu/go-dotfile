@@ -110,9 +110,13 @@ ls -a $HOME/tmp
 - v1.1.2
   - Update to `go-helper/v2`
 - v1.1.3
-  - Update to `go-helper/v2`
+  - Update `go-helper/v2`
 - v1.1.4
   - Move to `go-helper/basestruct`
+- v1.1.5
+  - Update `go-helper/v2`
+  - use property for `New()`
+  - `Dirs` and `Files` calculation moved to `Run()`
 
 ### License
 
