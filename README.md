@@ -2,6 +2,16 @@
 
 Simple dotfile management command line.
 
+- [Concept and Limitation](#concept-and-limitation)
+- [Install](#install)
+- [Build](#build)
+- [Configuration](#configuration)
+- [Testing](#testing)
+- [Change Log](#change-log)
+- [License](#license)
+
+<!--more-->
+
 ### Concept and Limitation
 
 - Not a drop-in replacement of Stow.
@@ -13,11 +23,19 @@ Simple dotfile management command line.
   - history files
   - cache files
 
-### Minimum GO version
+### Install
 
-go > 1.21
+Go install
 
-### Build and Install
+```sh
+go install github.com/J-Siu/go-dotfile@latest
+```
+
+Download
+
+- https://github.com/J-Siu/go-dotfile/releases
+
+### Build
 
 ```sh
 git clone https://github.com/J-Siu/go-dotfile.git
@@ -32,7 +50,7 @@ go mod tidy
 go get
 ```
 
-To install
+Install
 
 ```sh
 go install
