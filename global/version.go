@@ -22,10 +22,6 @@ THE SOFTWARE.
 
 package global
 
-import "github.com/J-Siu/go-dotfile/lib"
-
-var (
-	Conf       lib.TypeConf
-	Flag       lib.TypeFlag
-	FlagUpdate lib.TypeFlagUpdate
+const (
+	Version = "v1.1.5"
 )
