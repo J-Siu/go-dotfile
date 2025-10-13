@@ -27,6 +27,7 @@ import (
 	"os"
 	"path"
 	"strings"
+	"time"
 
 	"github.com/J-Siu/go-helper/v2/basestruct"
 	"github.com/J-Siu/go-helper/v2/errs"
@@ -39,8 +40,8 @@ import (
 type FileProcMode int8
 
 const (
-	APPEND FileProcMode = iota // Processing mode for TypeDotfile.Mode
-	COPY                       // Processing mode for TypeDotfile.Mode
+	APPEND FileProcMode = iota
+	COPY
 	SKIP
 )
 
@@ -106,72 +107,58 @@ func (t *TypeDotfile) Run() {
 //
 // Not using TypeDotfile.Err
 func (t *TypeDotfile) processFile(src, dest string) (err error) {
-	prefix := t.MyType + ".processFile"
+	// prefix := t.MyType + ".processFile"
 
-	fileProcMode := t.Mode
-	filePermStr := ".........."
+	var (
+		data          []byte
+		filePermStr   = ".........."
+		fileProcMode  = t.Mode
+		srcInfo       os.FileInfo
+		srcModTime    time.Time
+		srcPermission os.FileMode
+	)
 
-	// Destination FileMode
-	destFlag := os.O_CREATE | os.O_WRONLY
-	if fileProcMode == APPEND {
-		destFlag |= os.O_APPEND
-	}
-	if fileProcMode == COPY {
-		destFlag |= os.O_TRUNC
-		same := file.FileSame(src, dest)
-		if same {
-			fileProcMode = SKIP
-		}
+	if fileProcMode == COPY && file.FileSame(src, dest) {
+		fileProcMode = SKIP
 	}
 
 	if fileProcMode != SKIP {
-		srcInfo, err := os.Stat(src)
-		if err != nil {
-			return err
+		srcInfo, err = os.Stat(src)
+		if err == nil {
+			srcPermission = srcInfo.Mode()
+			srcModTime = srcInfo.ModTime()
 		}
-		srcPermission := srcInfo.Mode()
-		srcModTime := srcInfo.ModTime()
 
 		// Read source file
-		data, err := os.ReadFile(src)
-		if err != nil {
-			return err
-		}
-
-		// Open destination file
-		f, err := os.OpenFile(dest, destFlag, srcPermission)
-		if err != nil {
-			return err
+		if err == nil {
+			data, err = os.ReadFile(src)
 		}
 
 		// Append: add newline to destination file
-		if fileProcMode == APPEND {
-			_, err = f.Write([]byte("\n"))
-			if err != nil {
-				return err
+		if err == nil {
+			if fileProcMode == APPEND {
+				b := []byte("\n")
+				err = file.AppendByte(dest, &b)
+				if err == nil {
+					err = file.AppendByte(dest, &data)
+				}
+			} else {
+				err = file.WriteByte(dest, &data, srcPermission)
 			}
 		}
 
-		// Append source content to destination file
-		_, err = f.Write(data)
-		if err != nil {
-			return err
-		}
-
-		f.Close()
-
 		// Set dest permission
-		if fileProcMode == COPY {
+		if err == nil && fileProcMode == COPY {
 			os.Chtimes(dest, srcModTime, srcModTime)
 			filePermStr = srcPermission.String()
 		}
 	}
 
-	str := fmt.Sprintf("%-6s %s %s -> %s", fileProcMode.String(), filePermStr, src, dest)
-	if ezlog.GetLogLevel() >= ezlog.DEBUG {
-		ezlog.Debug().N(prefix).M(str).Out()
-	} else if t.Verbose {
-		ezlog.Log().M(str).Out()
+	if err == nil {
+		if ezlog.GetLogLevel() >= ezlog.DEBUG || t.Verbose {
+			str := fmt.Sprintf("%-6s %s %s -> %s", fileProcMode.String(), filePermStr, src, dest)
+			ezlog.Log().M(str).Out()
+		}
 	}
 
 	return err

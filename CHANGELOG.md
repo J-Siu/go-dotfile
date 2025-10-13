@@ -1,0 +1,45 @@
+- v1.0.7
+  - Fix Github workflows
+- v1.0.8
+  - Upgrade go-helper to v1.1.8
+  - Fix config logic
+  - Fix debug logic
+  - Fix receiver name
+- v1.0.9
+  - Upgrade go-helper to v1.1.10
+  - Add command line version
+  - Move -dryRun from base to "upgrade" command
+  - Move default config file `~/.go-dotfile.json` -> `~/.config/go-dotfile.json`
+- v1.0.10
+  - Fix TypeConf.setDefault overwrite command line config file option
+  - conf.go
+    - check DirDest exist
+  - dotfile.go
+    - Init() - Chdir() error check
+    - Process() - queue error
+    - Change some function to local
+  - root.go
+    - Print error queue
+- v1.0.11
+  - Fix version
+- v1.1.0
+  - Skip copy if source and destination files have same modification time and size
+  - Copy source file modification time to destination file
+- v1.1.1
+  - TypeDotfile
+    - fix MyType mismatch
+  - fileChanged
+    - fix logical err: should ignore destination file stat() err
+- v1.1.2
+  - Update to `go-helper/v2`
+- v1.1.3
+  - Update `go-helper/v2`
+- v1.1.4
+  - Move to `go-helper/basestruct`
+- v1.1.5
+  - Update `go-helper/v2`
+  - use property for `New()`
+  - `Dirs` and `Files` calculation moved to `Run()`
+- v1.1.6
+  - Update `go-helper/v2`
+  - Update `processFile` flow
