@@ -79,7 +79,7 @@ func (t *TypeDotfile) Run() {
 	// cd to simplify path handling
 	t.Err = os.Chdir(*t.DirSrc)
 	if t.Err == nil {
-		t.Dirs, t.Files = t.dirFileGet(".")
+		t.Dirs, t.Files = t.getDirFile(".")
 		ezlog.Debug().N(prefix).Nn("Dirs").M(t.Dirs).Out()
 		ezlog.Debug().N(prefix).Nn("Files").M(t.Files).Out()
 	}
@@ -165,7 +165,7 @@ func (t *TypeDotfile) processFile(src, dest string) (err error) {
 }
 
 // Get list of directory and list of file
-func (t *TypeDotfile) dirFileGet(dir string) (*[]string, *[]string) {
+func (t *TypeDotfile) getDirFile(dir string) (*[]string, *[]string) {
 	var (
 		dirs  []string
 		files []string
@@ -177,7 +177,7 @@ func (t *TypeDotfile) dirFileGet(dir string) (*[]string, *[]string) {
 			}
 		} else {
 			base := path.Base(p)
-			if str.ArrayContains(t.FileSkip, &base, false) && !str.ArrayContainsSubString(t.DirSkip, "/"+p, false) {
+			if !str.ArrayContains(t.FileSkip, &base, false) && !str.ArrayContainsSubString(t.DirSkip, "/"+p, false) {
 				files = append(files, p)
 			}
 		}
