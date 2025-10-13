@@ -164,14 +164,26 @@ func (t *TypeDotfile) processFile(src, dest string) (err error) {
 	return err
 }
 
-// Array contains
-func contains[T comparable](arr []T, x T) bool {
-	for _, v := range arr {
-		if v == x {
-			return true
+// Get list of directory and list of file
+func (t *TypeDotfile) dirFileGet(dir string) (*[]string, *[]string) {
+	var (
+		dirs  []string
+		files []string
+	)
+	symwalk.Walk(dir, func(p string, info os.FileInfo, err error) error {
+		if info.IsDir() {
+			if p != "." && !str.ArrayContainsSubString(t.DirSkip, "/"+p+"/", false) {
+				dirs = append(dirs, p)
+			}
+		} else {
+			base := path.Base(p)
+			if str.ArrayContains(t.FileSkip, &base, false) && !str.ArrayContainsSubString(t.DirSkip, "/"+p, false) {
+				files = append(files, p)
+			}
 		}
-	}
-	return false
+		return nil
+	})
+	return &dirs, &files
 }
 
 // Create dotted/hidden directory
@@ -189,27 +201,6 @@ func dirCreateHidden(dir, dirBase string) (e error) {
 		}
 	}
 	return e
-}
-
-// Get list of directory and list of file
-func (t *TypeDotfile) dirFileGet(dir string) (*[]string, *[]string) {
-	var (
-		dirs  []string
-		files []string
-	)
-	symwalk.Walk(dir, func(p string, info os.FileInfo, err error) error {
-		if info.IsDir() {
-			if p != "." && !str.ArrayContainsSubString(t.DirSkip, "/"+p+"/", false) {
-				dirs = append(dirs, p)
-			}
-		} else {
-			if !contains(*t.FileSkip, path.Base(p)) && !str.ArrayContainsSubString(t.DirSkip, "/"+p, false) {
-				files = append(files, p)
-			}
-		}
-		return nil
-	})
-	return &dirs, &files
 }
 
 // Add "."" in front of path if there is none
