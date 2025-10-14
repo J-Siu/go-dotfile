@@ -43,3 +43,6 @@
 - v1.1.6
   - Update `go-helper/v2`
   - Update `processFile` flow
+- v1.1.7
+  - Fix `getDirFile`
+  - Update `go-helper/v2`
