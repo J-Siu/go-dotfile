@@ -38,6 +38,7 @@ var updateCmd = &cobra.Command{
 			DirDest:  &global.Conf.DirDest,
 			DirSkip:  &global.Conf.DirSkip,
 			FileSkip: &global.Conf.FileSkip,
+			NonSkip:  global.Flag.NonSkip,
 			Verbose:  global.Flag.Verbose,
 		}
 

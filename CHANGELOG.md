@@ -46,3 +46,5 @@
 - v1.1.7
   - Fix `getDirFile`
   - Update `go-helper/v2`
+- v1.1.8
+  - Flag to output non-skip file only to shorten output

@@ -51,6 +51,7 @@ type TypeDotfileProperty struct {
 	DirSrc   *string      `json:"DirSrc"`
 	FileSkip *[]string    `json:"FileSkip"`
 	Mode     FileProcMode `json:"Mode"`
+	NonSkip  bool         `json:"NonSkip"`
 	Verbose  bool         `json:"Verbose"`
 }
 
@@ -155,7 +156,7 @@ func (t *TypeDotfile) processFile(src, dest string) (err error) {
 	}
 
 	if err == nil {
-		if ezlog.GetLogLevel() >= ezlog.DEBUG || t.Verbose {
+		if ezlog.GetLogLevel() >= ezlog.DEBUG || t.Verbose || t.NonSkip && fileProcMode != SKIP {
 			str := fmt.Sprintf("%-6s %s %s -> %s", fileProcMode.String(), filePermStr, src, dest)
 			ezlog.Log().M(str).Out()
 		}
