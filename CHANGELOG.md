@@ -31,20 +31,22 @@
   - fileChanged
     - fix logical err: should ignore destination file stat() err
 - v1.1.2
-  - Update to `go-helper/v2`
+  - update go-helper/v2
 - v1.1.3
-  - Update `go-helper/v2`
+  - update go-helper/v2
 - v1.1.4
   - Move to `go-helper/basestruct`
 - v1.1.5
-  - Update `go-helper/v2`
+  - update go-helper/v2
   - use property for `New()`
   - `Dirs` and `Files` calculation moved to `Run()`
 - v1.1.6
-  - Update `go-helper/v2`
-  - Update `processFile` flow
+  - update go-helper/v2
+  - update `processFile` flow
 - v1.1.7
   - Fix `getDirFile`
-  - Update `go-helper/v2`
+  - update go-helper/v2
 - v1.1.8
   - Flag to output non-skip file only to shorten output
+- v1.1.9
+  - update go-helper/v2

@@ -81,8 +81,8 @@ func (t *TypeDotfile) Run() {
 	t.Err = os.Chdir(*t.DirSrc)
 	if t.Err == nil {
 		t.Dirs, t.Files = t.getDirFile(".")
-		ezlog.Debug().N(prefix).Nn("Dirs").M(t.Dirs).Out()
-		ezlog.Debug().N(prefix).Nn("Files").M(t.Files).Out()
+		ezlog.Debug().N(prefix).N("Dirs").Lm(t.Dirs).Out()
+		ezlog.Debug().N(prefix).N("Files").Lm(t.Files).Out()
 	}
 	// create dirs
 	if t.Err == nil && t.Dirs != nil {

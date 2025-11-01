@@ -59,13 +59,13 @@ func (t *TypeConf) New() {
 	prefix := t.MyType + ".New"
 
 	t.setDefault()
-	ezlog.Debug().N(prefix).Nn("Default").M(t).Out()
+	ezlog.Debug().N(prefix).N("Default").Lm(t).Out()
 
 	t.readFileConf()
-	ezlog.Debug().N(prefix).Nn("Raw").M(t).Out()
+	ezlog.Debug().N(prefix).N("Raw").Lm(t).Out()
 
 	t.expand()
-	ezlog.Debug().N(prefix).Nn("Expand").M(t).Out()
+	ezlog.Debug().N(prefix).N("Expand").Lm(t).Out()
 
 	// Check DirDest
 	if !file.IsDir(t.DirDest) {
