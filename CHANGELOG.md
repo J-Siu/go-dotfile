@@ -50,3 +50,6 @@
   - Flag to output non-skip file only to shorten output
 - v1.1.9
   - update go-helper/v2
+- v1.2.0
+  - update go-helper/v2
+  - implement dry run

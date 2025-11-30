@@ -49,6 +49,7 @@ type TypeDotfileProperty struct {
 	DirDest  *string      `json:"DirDest"`
 	DirSkip  *[]string    `json:"DirSkip"`
 	DirSrc   *string      `json:"DirSrc"`
+	DryRun   bool         `json:"Dryrun"`
 	FileSkip *[]string    `json:"FileSkip"`
 	Mode     FileProcMode `json:"Mode"`
 	NonSkip  bool         `json:"NonSkip"`
@@ -63,7 +64,7 @@ type TypeDotfile struct {
 	Files *[]string `json:"Files"`
 }
 
-func (t *TypeDotfile) New(property *TypeDotfileProperty) {
+func (t *TypeDotfile) New(property *TypeDotfileProperty) *TypeDotfile {
 	t.Base = new(basestruct.Base)
 	t.Initialized = true
 	t.MyType = "TypeDotfile"
@@ -72,6 +73,8 @@ func (t *TypeDotfile) New(property *TypeDotfileProperty) {
 	t.TypeDotfileProperty = property
 
 	ezlog.Debug().N(prefix).M(t).Out()
+
+	return t
 }
 
 func (t *TypeDotfile) Run() {
@@ -109,10 +112,8 @@ func (t *TypeDotfile) Run() {
 // Not using TypeDotfile.Err
 func (t *TypeDotfile) processFile(src, dest string) (err error) {
 	// prefix := t.MyType + ".processFile"
-
 	var (
 		data          []byte
-		filePermStr   = ".........."
 		fileProcMode  = t.Mode
 		srcInfo       os.FileInfo
 		srcModTime    time.Time
@@ -137,7 +138,7 @@ func (t *TypeDotfile) processFile(src, dest string) (err error) {
 
 		// Append: add newline to destination file
 		if err == nil {
-			if fileProcMode == APPEND {
+			if fileProcMode == APPEND && !t.DryRun {
 				b := []byte("\n")
 				err = file.AppendByte(dest, &b)
 				if err == nil {
@@ -149,16 +150,19 @@ func (t *TypeDotfile) processFile(src, dest string) (err error) {
 		}
 
 		// Set dest permission
-		if err == nil && fileProcMode == COPY {
+		if err == nil && fileProcMode == COPY && !t.DryRun {
 			os.Chtimes(dest, srcModTime, srcModTime)
-			filePermStr = srcPermission.String()
 		}
 	}
 
 	if err == nil {
 		if ezlog.GetLogLevel() >= ezlog.DEBUG || t.Verbose || t.NonSkip && fileProcMode != SKIP {
-			str := fmt.Sprintf("%-6s %s %s -> %s", fileProcMode.String(), filePermStr, src, dest)
-			ezlog.Log().M(str).Out()
+			str := fmt.Sprintf("%-6s %s %s -> %s", fileProcMode.String(), srcPermission.String(), src, dest)
+			ezlog.Log()
+			if t.DryRun {
+				ezlog.N("DryRun")
+			}
+			ezlog.M(str).Out()
 		}
 	}
 

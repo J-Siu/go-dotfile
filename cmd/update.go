@@ -34,23 +34,21 @@ var updateCmd = &cobra.Command{
 	Aliases: []string{"u", "up"},
 	Short:   "Update dotfiles",
 	Run: func(cmd *cobra.Command, args []string) {
+		//
 		property := lib.TypeDotfileProperty{
 			DirDest:  &global.Conf.DirDest,
 			DirSkip:  &global.Conf.DirSkip,
+			DryRun:   global.FlagUpdate.Dryrun,
 			FileSkip: &global.Conf.FileSkip,
 			NonSkip:  global.Flag.NonSkip,
 			Verbose:  global.Flag.Verbose,
 		}
-
 		// Process copy
 		property.Mode = lib.COPY
 		for _, dir := range global.Conf.DirCP {
 			var df lib.TypeDotfile
 			property.DirSrc = &dir
-			df.New(&property)
-			if !global.FlagUpdate.Dryrun {
-				df.Run()
-			}
+			df.New(&property).Run()
 		}
 		// Process append
 		property.Mode = lib.APPEND
@@ -66,6 +64,7 @@ var updateCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(updateCmd)
-	updateCmd.PersistentFlags().BoolVarP(&global.FlagUpdate.Dryrun, "dryrun", "", false, "Dryrun")
+	cmd := updateCmd
+	rootCmd.AddCommand(cmd)
+	cmd.Flags().BoolVarP(&global.FlagUpdate.Dryrun, "dryrun", "", false, "Dryrun")
 }
