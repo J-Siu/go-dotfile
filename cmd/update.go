@@ -66,5 +66,6 @@ var updateCmd = &cobra.Command{
 func init() {
 	cmd := updateCmd
 	rootCmd.AddCommand(cmd)
+	cmd.Flags().BoolVarP(&global.Flag.NonSkip, "show-non-skip", "s", false, "Output non-skip only")
 	cmd.Flags().BoolVarP(&global.FlagUpdate.Dryrun, "dryrun", "", false, "Dryrun")
 }
