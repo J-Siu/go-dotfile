@@ -70,9 +70,11 @@ func init() {
 		ezlog.Log().M("Only support Linux and MacOS.").Out()
 		os.Exit(1)
 	}
-	rootCmd.PersistentFlags().BoolVarP(&global.Flag.Debug, "debug", "d", false, "Enable debug")
-	rootCmd.PersistentFlags().BoolVarP(&global.Flag.NonSkip, "show-non-skip", "s", false, "Output non-skip only")
-	rootCmd.PersistentFlags().BoolVarP(&global.Flag.Trace, "trace", "t", false, "Enable trace")
-	rootCmd.PersistentFlags().BoolVarP(&global.Flag.Verbose, "verbose", "v", false, "Verbose")
-	rootCmd.PersistentFlags().StringVarP(&global.Conf.FileConf, "config", "c", lib.Default.FileConf, "Config file")
+
+	cmd := rootCmd
+	cmd.PersistentFlags().BoolVarP(&global.Flag.Debug, "debug", "d", false, "Enable debug")
+	cmd.PersistentFlags().BoolVarP(&global.Flag.NonSkip, "show-non-skip", "s", false, "Output non-skip only")
+	cmd.PersistentFlags().BoolVarP(&global.Flag.Trace, "trace", "t", false, "Enable trace")
+	cmd.PersistentFlags().BoolVarP(&global.Flag.Verbose, "verbose", "v", false, "Verbose")
+	cmd.PersistentFlags().StringVarP(&global.Conf.FileConf, "config", "c", lib.Default.FileConf, "Config file")
 }
