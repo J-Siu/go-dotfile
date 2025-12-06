@@ -30,5 +30,5 @@ type TypeFlag struct {
 	Verbose bool
 }
 type TypeFlagUpdate struct {
-	Dryrun bool
+	Save bool
 }
