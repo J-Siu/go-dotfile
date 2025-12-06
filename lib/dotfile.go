@@ -49,10 +49,10 @@ type TypeDotfileProperty struct {
 	DirDest  *string      `json:"DirDest"`
 	DirSkip  *[]string    `json:"DirSkip"`
 	DirSrc   *string      `json:"DirSrc"`
-	DryRun   bool         `json:"Dryrun"`
 	FileSkip *[]string    `json:"FileSkip"`
 	Mode     FileProcMode `json:"Mode"`
 	NonSkip  bool         `json:"NonSkip"`
+	Save     bool         `json:"Save"`
 	Verbose  bool         `json:"Verbose"`
 }
 
@@ -112,24 +112,41 @@ func (t *TypeDotfile) Run() {
 // Not using TypeDotfile.Err
 func (t *TypeDotfile) processFile(src, dest string) (err error) {
 	// prefix := t.MyType + ".processFile"
+
 	var (
 		data          []byte
-		fileProcMode  = t.Mode
+		desInfo       os.FileInfo
+		desModTime    time.Time
+		desModTimeStr string       = "---------- --:--:--"
+		fileProcMode  FileProcMode = t.Mode
 		srcInfo       os.FileInfo
 		srcModTime    time.Time
+		srcModTimeStr string = "---------- --:--:--"
 		srcPermission os.FileMode
+		timeFormat    string = "2006-01-02 15:04:05"
 	)
+
+	// Get File info before change
+
+	desInfo, err = os.Stat(dest)
+	if err == nil {
+		desModTime = desInfo.ModTime()
+		desModTimeStr = desModTime.Local().Format(timeFormat)
+	}
+	err = nil // Resetting err, as dest may not exist.
+
+	srcInfo, err = os.Stat(src)
+	if err == nil {
+		srcPermission = srcInfo.Mode()
+		srcModTime = srcInfo.ModTime()
+		srcModTimeStr = srcModTime.Local().Format(timeFormat)
+	}
 
 	if fileProcMode == COPY && file.FileSame(src, dest) {
 		fileProcMode = SKIP
 	}
 
 	if fileProcMode != SKIP {
-		srcInfo, err = os.Stat(src)
-		if err == nil {
-			srcPermission = srcInfo.Mode()
-			srcModTime = srcInfo.ModTime()
-		}
 
 		// Read source file
 		if err == nil {
@@ -138,7 +155,7 @@ func (t *TypeDotfile) processFile(src, dest string) (err error) {
 
 		// Append: add newline to destination file
 		if err == nil {
-			if fileProcMode == APPEND && !t.DryRun {
+			if fileProcMode == APPEND && t.Save {
 				b := []byte("\n")
 				err = file.AppendByte(dest, &b)
 				if err == nil {
@@ -150,16 +167,16 @@ func (t *TypeDotfile) processFile(src, dest string) (err error) {
 		}
 
 		// Set dest permission
-		if err == nil && fileProcMode == COPY && !t.DryRun {
+		if err == nil && fileProcMode == COPY && t.Save {
 			os.Chtimes(dest, srcModTime, srcModTime)
 		}
 	}
 
 	if err == nil {
 		if ezlog.GetLogLevel() >= ezlog.DEBUG || t.Verbose || t.NonSkip && fileProcMode != SKIP {
-			str := fmt.Sprintf("%-6s %s %s -> %s", fileProcMode.String(), srcPermission.String(), src, dest)
+			str := fmt.Sprintf("%-6s %s %s %s -> %s %s", fileProcMode.String(), srcPermission.String(), srcModTimeStr, src, desModTimeStr, dest)
 			ezlog.Log()
-			if t.DryRun {
+			if !t.Save {
 				ezlog.N("DryRun")
 			}
 			ezlog.M(str).Out()
