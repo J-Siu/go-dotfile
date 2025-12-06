@@ -38,7 +38,7 @@ var updateCmd = &cobra.Command{
 		property := lib.TypeDotfileProperty{
 			DirDest:  &global.Conf.DirDest,
 			DirSkip:  &global.Conf.DirSkip,
-			DryRun:   global.FlagUpdate.Dryrun,
+			Save:     global.FlagUpdate.Save,
 			FileSkip: &global.Conf.FileSkip,
 			NonSkip:  global.Flag.NonSkip,
 			Verbose:  global.Flag.Verbose,
@@ -56,7 +56,7 @@ var updateCmd = &cobra.Command{
 			var df lib.TypeDotfile
 			property.DirSrc = &dir
 			df.New(&property)
-			if !global.FlagUpdate.Dryrun {
+			if !global.FlagUpdate.Save {
 				df.Run()
 			}
 		}
@@ -66,6 +66,6 @@ var updateCmd = &cobra.Command{
 func init() {
 	cmd := updateCmd
 	rootCmd.AddCommand(cmd)
-	cmd.Flags().BoolVarP(&global.Flag.NonSkip, "show-non-skip", "s", false, "Output non-skip only")
-	cmd.Flags().BoolVarP(&global.FlagUpdate.Dryrun, "dryrun", "", false, "Dryrun")
+	cmd.Flags().BoolVarP(&global.Flag.NonSkip, "non-skip", "n", false, "Show non-skip file only")
+	cmd.Flags().BoolVarP(&global.FlagUpdate.Save, "save", "s", false, "Save changes")
 }
