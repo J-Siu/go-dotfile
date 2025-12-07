@@ -86,7 +86,7 @@ DirAP|n/a|Files in these directories will be be copied to target location if not
 ```sh
 cp -r examples/df_test $HOME/
 mkdir $HOME/tmp
-go-dotfile -c examples/go-dotfile.sample.json
+go-dotfile -c examples/go-dotfile.sample.json u -s
 ls -a $HOME/tmp
 ```
 

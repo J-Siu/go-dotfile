@@ -72,7 +72,7 @@ var updateCmd = &cobra.Command{
 func init() {
 	cmd := updateCmd
 	rootCmd.AddCommand(cmd)
-	cmd.Flags().BoolVarP(&global.FlagUpdate.NonSkip, "non-skip", "n", false, "Show non-skip file only")
+	cmd.Flags().BoolVarP(&global.FlagUpdate.Quiet, "quiet", "q", false, "Show non-skip file only")
 	cmd.Flags().BoolVarP(&global.FlagUpdate.Save, "save", "s", false, "Save changes")
 }
 
@@ -84,7 +84,7 @@ func output(result *lib.TypeDotfileResult) {
 	for _, r := range *result {
 		if ezlog.GetLogLevel() >= ezlog.DEBUG ||
 			global.Flag.Verbose ||
-			global.FlagUpdate.NonSkip && (*r)[0] != lib.SKIP.String() {
+			!global.FlagUpdate.Quiet && (*r)[0] != lib.SKIP.String() {
 			str = strings.Join(*r, "\t")
 			if !global.FlagUpdate.Save {
 				str = "DryRun:\t" + str

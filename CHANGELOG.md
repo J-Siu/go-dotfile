@@ -57,3 +57,5 @@
   - change flag dryrun to save, s, default false
   - change flag show-non-skip to non-skip, n, default false
   - fix save logic for append
+- v1.3.1
+  - change flag non-skip to quiet, q, default false
