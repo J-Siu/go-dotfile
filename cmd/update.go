@@ -23,8 +23,14 @@ THE SOFTWARE.
 package cmd
 
 import (
+	"fmt"
+	"os"
+	"strings"
+	"text/tabwriter"
+
 	"github.com/J-Siu/go-dotfile/global"
 	"github.com/J-Siu/go-dotfile/lib"
+	"github.com/J-Siu/go-helper/v2/ezlog"
 	"github.com/spf13/cobra"
 )
 
@@ -34,14 +40,13 @@ var updateCmd = &cobra.Command{
 	Aliases: []string{"u", "up"},
 	Short:   "Update dotfiles",
 	Run: func(cmd *cobra.Command, args []string) {
+		var result []*[]string
 		//
 		property := lib.TypeDotfileProperty{
 			DirDest:  &global.Conf.DirDest,
 			DirSkip:  &global.Conf.DirSkip,
 			Save:     global.FlagUpdate.Save,
 			FileSkip: &global.Conf.FileSkip,
-			NonSkip:  global.Flag.NonSkip,
-			Verbose:  global.Flag.Verbose,
 		}
 		// Process copy
 		property.Mode = lib.COPY
@@ -49,6 +54,7 @@ var updateCmd = &cobra.Command{
 			var df lib.TypeDotfile
 			property.DirSrc = &dir
 			df.New(&property).Run()
+			result = append(result, df.Result...)
 		}
 		// Process append
 		property.Mode = lib.APPEND
@@ -57,9 +63,12 @@ var updateCmd = &cobra.Command{
 			property.DirSrc = &dir
 			df.New(&property)
 			if !global.FlagUpdate.Save {
+				// TODO: This is not complete. It should still run.
 				df.Run()
+				result = append(result, df.Result...)
 			}
 		}
+		output(&result)
 	},
 }
 
@@ -68,4 +77,21 @@ func init() {
 	rootCmd.AddCommand(cmd)
 	cmd.Flags().BoolVarP(&global.Flag.NonSkip, "non-skip", "n", false, "Show non-skip file only")
 	cmd.Flags().BoolVarP(&global.FlagUpdate.Save, "save", "s", false, "Save changes")
+}
+
+func output(result *[]*[]string) {
+	var (
+		w   = tabwriter.NewWriter(os.Stdout, 1, 1, 1, ' ', 0)
+		str string
+	)
+	for _, r := range *result {
+		if ezlog.GetLogLevel() >= ezlog.DEBUG || global.Flag.Verbose || global.Flag.NonSkip && (*r)[0] != lib.SKIP.String() {
+			str = strings.Join(*r, "\t")
+			if !global.FlagUpdate.Save {
+				str = "DryRun:\t" + str
+			}
+			fmt.Fprintln(w, str)
+		}
+	}
+	w.Flush()
 }
