@@ -40,18 +40,19 @@ var updateCmd = &cobra.Command{
 	Aliases: []string{"u", "up"},
 	Short:   "Update dotfiles",
 	Run: func(cmd *cobra.Command, args []string) {
-		var result []*[]string
-		//
-		property := lib.TypeDotfileProperty{
-			DirDest:  &global.Conf.DirDest,
-			DirSkip:  &global.Conf.DirSkip,
-			Save:     global.FlagUpdate.Save,
-			FileSkip: &global.Conf.FileSkip,
-		}
+		var (
+			df       lib.TypeDotfile
+			property = lib.TypeDotfileProperty{
+				DirDest:  &global.Conf.DirDest,
+				DirSkip:  &global.Conf.DirSkip,
+				Save:     global.FlagUpdate.Save,
+				FileSkip: &global.Conf.FileSkip,
+			}
+			result lib.TypeDotfileResult
+		)
 		// Process copy
 		property.Mode = lib.COPY
 		for _, dir := range global.Conf.DirCP {
-			var df lib.TypeDotfile
 			property.DirSrc = &dir
 			df.New(&property).Run()
 			result = append(result, df.Result...)
@@ -59,14 +60,10 @@ var updateCmd = &cobra.Command{
 		// Process append
 		property.Mode = lib.APPEND
 		for _, dir := range global.Conf.DirAP {
-			var df lib.TypeDotfile
 			property.DirSrc = &dir
 			df.New(&property)
-			if !global.FlagUpdate.Save {
-				// TODO: This is not complete. It should still run.
-				df.Run()
-				result = append(result, df.Result...)
-			}
+			df.Run()
+			result = append(result, df.Result...)
 		}
 		output(&result)
 	},
@@ -79,13 +76,15 @@ func init() {
 	cmd.Flags().BoolVarP(&global.FlagUpdate.Save, "save", "s", false, "Save changes")
 }
 
-func output(result *[]*[]string) {
+func output(result *lib.TypeDotfileResult) {
 	var (
-		w   = tabwriter.NewWriter(os.Stdout, 1, 1, 1, ' ', 0)
 		str string
+		w   = tabwriter.NewWriter(os.Stdout, 1, 1, 1, ' ', 0)
 	)
 	for _, r := range *result {
-		if ezlog.GetLogLevel() >= ezlog.DEBUG || global.Flag.Verbose || global.FlagUpdate.NonSkip && (*r)[0] != lib.SKIP.String() {
+		if ezlog.GetLogLevel() >= ezlog.DEBUG ||
+			global.Flag.Verbose ||
+			global.FlagUpdate.NonSkip && (*r)[0] != lib.SKIP.String() {
 			str = strings.Join(*r, "\t")
 			if !global.FlagUpdate.Save {
 				str = "DryRun:\t" + str

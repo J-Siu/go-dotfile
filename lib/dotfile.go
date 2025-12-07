@@ -37,6 +37,7 @@ import (
 )
 
 type FileProcMode int8
+type TypeDotfileResult []*[]string
 
 const (
 	APPEND FileProcMode = iota
@@ -57,9 +58,9 @@ type TypeDotfile struct {
 	*basestruct.Base
 	*TypeDotfileProperty
 	// --- calculate in Run()
-	Dirs   *[]string   `json:"Dirs"`
-	Files  *[]string   `json:"Files"`
-	Result []*[]string `json:"Result"`
+	Dirs   *[]string         `json:"Dirs"`
+	Files  *[]string         `json:"Files"`
+	Result TypeDotfileResult `json:"Result"`
 }
 
 func (t *TypeDotfile) New(property *TypeDotfileProperty) *TypeDotfile {
@@ -69,6 +70,10 @@ func (t *TypeDotfile) New(property *TypeDotfileProperty) *TypeDotfile {
 	prefix := t.MyType + ".New"
 
 	t.TypeDotfileProperty = property
+
+	t.Dirs = nil
+	t.Files = nil
+	t.Result = nil
 
 	ezlog.Debug().N(prefix).M(t).Out()
 
@@ -144,29 +149,37 @@ func (t *TypeDotfile) processFile(src, dest string) (err error) {
 		fileProcMode = SKIP
 	}
 
-	if fileProcMode != SKIP && t.Save {
+	// Append only compare modTime
+	if fileProcMode == APPEND && strings.EqualFold(desModTimeStr, srcModTimeStr) {
+		fileProcMode = SKIP
+	}
 
+	if fileProcMode != SKIP && t.Save {
 		// Read source file
 		if err == nil {
 			data, err = os.ReadFile(src)
 		}
-
-		// Append: add newline to destination file
+		//
 		if err == nil {
 			if fileProcMode == APPEND {
+				// APPEND: add newline to destination file
 				b := []byte("\n")
 				err = file.AppendByte(dest, &b)
 				if err == nil {
 					err = file.AppendByte(dest, &data)
 				}
 			} else {
+				// COPY
 				err = file.WriteByte(dest, &data, srcPermission)
 			}
 		}
-
+		// Set dest modTime
+		if err == nil {
+			err = os.Chtimes(dest, srcModTime, srcModTime)
+		}
 		// Set dest permission
-		if err == nil && fileProcMode == COPY {
-			os.Chtimes(dest, srcModTime, srcModTime)
+		if err == nil {
+			err = os.Chmod(dest, srcPermission)
 		}
 	}
 
