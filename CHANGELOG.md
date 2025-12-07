@@ -53,3 +53,7 @@
 - v1.2.0
   - update go-helper/v2
   - implement dry run
+- v1.3.0
+  - change flag dryrun to save, s, default false
+  - change flag show-non-skip to non-skip, n, default false
+  - fix save logic for append
