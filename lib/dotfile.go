@@ -23,7 +23,6 @@ THE SOFTWARE.
 package lib
 
 import (
-	"fmt"
 	"os"
 	"path"
 	"strings"
@@ -51,17 +50,16 @@ type TypeDotfileProperty struct {
 	DirSrc   *string      `json:"DirSrc"`
 	FileSkip *[]string    `json:"FileSkip"`
 	Mode     FileProcMode `json:"Mode"`
-	NonSkip  bool         `json:"NonSkip"`
 	Save     bool         `json:"Save"`
-	Verbose  bool         `json:"Verbose"`
 }
 
 type TypeDotfile struct {
 	*basestruct.Base
 	*TypeDotfileProperty
 	// --- calculate in Run()
-	Dirs  *[]string `json:"Dirs"`
-	Files *[]string `json:"Files"`
+	Dirs   *[]string   `json:"Dirs"`
+	Files  *[]string   `json:"Files"`
+	Result []*[]string `json:"Result"`
 }
 
 func (t *TypeDotfile) New(property *TypeDotfileProperty) *TypeDotfile {
@@ -146,7 +144,7 @@ func (t *TypeDotfile) processFile(src, dest string) (err error) {
 		fileProcMode = SKIP
 	}
 
-	if fileProcMode != SKIP {
+	if fileProcMode != SKIP && t.Save {
 
 		// Read source file
 		if err == nil {
@@ -155,7 +153,7 @@ func (t *TypeDotfile) processFile(src, dest string) (err error) {
 
 		// Append: add newline to destination file
 		if err == nil {
-			if fileProcMode == APPEND && t.Save {
+			if fileProcMode == APPEND {
 				b := []byte("\n")
 				err = file.AppendByte(dest, &b)
 				if err == nil {
@@ -167,20 +165,23 @@ func (t *TypeDotfile) processFile(src, dest string) (err error) {
 		}
 
 		// Set dest permission
-		if err == nil && fileProcMode == COPY && t.Save {
+		if err == nil && fileProcMode == COPY {
 			os.Chtimes(dest, srcModTime, srcModTime)
 		}
 	}
 
 	if err == nil {
-		if ezlog.GetLogLevel() >= ezlog.DEBUG || t.Verbose || t.NonSkip && fileProcMode != SKIP {
-			str := fmt.Sprintf("%-6s %s %s %s -> %s %s", fileProcMode.String(), srcPermission.String(), srcModTimeStr, src, desModTimeStr, dest)
-			ezlog.Log()
-			if !t.Save {
-				ezlog.N("DryRun")
-			}
-			ezlog.M(str).Out()
-		}
+		var result []string
+		result = append(result,
+			fileProcMode.String(),
+			srcPermission.String(),
+			srcModTimeStr,
+			src,
+			"->",
+			desModTimeStr,
+			dest)
+
+		t.Result = append(t.Result, &result)
 	}
 
 	return err
