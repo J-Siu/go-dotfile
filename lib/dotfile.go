@@ -73,9 +73,9 @@ type TypeDotfile struct {
 	*basestruct.Base
 	*TypeDotfileProperty
 	// --- calculate in Run()
-	Dirs    *[]string `json:"Dirs"`
-	Files   *[]string `json:"Files"`
-	Records TypeDotfileRecords
+	Dirs    *[]string          `json:"Dirs"`
+	Files   *[]string          `json:"Files"`
+	Records TypeDotfileRecords `json:"Records"` // Result of processed dotfiles
 }
 
 func (t *TypeDotfile) New(property *TypeDotfileProperty) *TypeDotfile {

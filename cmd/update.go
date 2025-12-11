@@ -50,8 +50,6 @@ var updateCmd = &cobra.Command{
 				FileSkip: &global.Conf.FileSkip,
 			}
 			records lib.TypeDotfileRecords
-			dupCopy bool
-			dupList = make(map[string][]string) // map desPath to srcPath array
 		)
 		// Process copy
 		property.Mode = lib.COPY
@@ -69,10 +67,7 @@ var updateCmd = &cobra.Command{
 			records = append(records, df.Records...)
 		}
 		// Output
-		dupCopy = output(&records, dupList)
-		if dupCopy {
-			outputDupList(dupList)
-		}
+		output(&records)
 	},
 }
 
@@ -84,20 +79,23 @@ func init() {
 	cmd.Flags().BoolVarP(&global.FlagUpdate.Save, "save", "s", false, "Save changes")
 }
 
-func output(records *lib.TypeDotfileRecords, dupList map[string][]string) (dupCopy bool) {
+func output(records *lib.TypeDotfileRecords) {
 	const (
 		noModTimeStr = "---------- --:--:--"
 		timeFormat   = "2006-01-02 15:04:05"
 	)
 	var (
+		dupCopy       bool // true: duplicate copy exist
 		desModTimeStr string
 		recordStrArr  []string
 		tab_Writer    = tabwriter.NewWriter(os.Stdout, 1, 1, 1, ' ', 0)
+		dupList       = make(map[string][]string) // map desPath to srcPath array
 	)
 	for _, r := range *records {
 		// populate duplicate copy list
 		if r.FileProcMode == lib.COPY {
 			dupList[r.DesPath] = append(dupList[r.DesPath], r.SrcPath)
+			// It is duplicate copy if more than 1 src path
 			if len(dupList[r.DesPath]) > 1 {
 				dupCopy = true
 			}
@@ -125,7 +123,7 @@ func output(records *lib.TypeDotfileRecords, dupList map[string][]string) (dupCo
 				if r.DesExist {
 					desModTimeStr = r.DesModTime.Local().Format(timeFormat)
 				} else {
-					desModTimeStr = noModTimeStr // destination file does not exist(new file), no time
+					desModTimeStr = noModTimeStr // no time if destination file does not exist(eg. new file)
 				}
 				recordStrArr = append(recordStrArr,
 					r.FileProcMode.String(),
@@ -144,13 +142,17 @@ func output(records *lib.TypeDotfileRecords, dupList map[string][]string) (dupCo
 		}
 	}
 	tab_Writer.Flush()
-	return dupCopy
+
+	if dupCopy {
+		outputDupList(dupList)
+	}
 }
 
 func outputDupList(dupList map[string][]string) {
-	ezlog.Log().N("*** Duplicate Copy").Out()
+	ezlog.Log().M("*** Duplicate Copy ***").Out()
 	if len(dupList) > 0 {
 		for desPath, srcPathArray := range dupList {
+			// It is duplicate copy if more than 1 src path
 			if len(srcPathArray) > 1 {
 				ezlog.Log().N(desPath).Lm(srcPathArray).Out()
 			}
