@@ -31,6 +31,7 @@ import (
 	"github.com/J-Siu/go-dotfile/global"
 	"github.com/J-Siu/go-dotfile/lib"
 	"github.com/J-Siu/go-helper/v2/ezlog"
+	"github.com/J-Siu/go-helper/v2/strany"
 	"github.com/spf13/cobra"
 )
 
@@ -48,14 +49,16 @@ var updateCmd = &cobra.Command{
 				Save:     global.FlagUpdate.Save,
 				FileSkip: &global.Conf.FileSkip,
 			}
-			result lib.TypeDotfileResult
+			records lib.TypeDotfileRecords
+			dupCopy bool
+			dupList = make(map[string][]string) // map desPath to srcPath array
 		)
 		// Process copy
 		property.Mode = lib.COPY
 		for _, dir := range global.Conf.DirCP {
 			property.DirSrc = &dir
 			df.New(&property).Run()
-			result = append(result, df.Result...)
+			records = append(records, df.Records...)
 		}
 		// Process append
 		property.Mode = lib.APPEND
@@ -63,34 +66,94 @@ var updateCmd = &cobra.Command{
 			property.DirSrc = &dir
 			df.New(&property)
 			df.Run()
-			result = append(result, df.Result...)
+			records = append(records, df.Records...)
 		}
-		output(&result)
+		// Output
+		dupCopy = output(&records, dupList)
+		if dupCopy {
+			outputDupList(dupList)
+		}
 	},
 }
 
 func init() {
 	cmd := updateCmd
 	rootCmd.AddCommand(cmd)
+	cmd.Flags().BoolVarP(&global.FlagUpdate.NoInfo, "noinfo", "n", false, "Do not print file info")
 	cmd.Flags().BoolVarP(&global.FlagUpdate.Quiet, "quiet", "q", false, "Show non-skip file only")
 	cmd.Flags().BoolVarP(&global.FlagUpdate.Save, "save", "s", false, "Save changes")
 }
 
-func output(result *lib.TypeDotfileResult) {
-	var (
-		str string
-		w   = tabwriter.NewWriter(os.Stdout, 1, 1, 1, ' ', 0)
+func output(records *lib.TypeDotfileRecords, dupList map[string][]string) (dupCopy bool) {
+	const (
+		noModTimeStr = "---------- --:--:--"
+		timeFormat   = "2006-01-02 15:04:05"
 	)
-	for _, r := range *result {
+	var (
+		desModTimeStr string
+		recordStrArr  []string
+		tab_Writer    = tabwriter.NewWriter(os.Stdout, 1, 1, 1, ' ', 0)
+	)
+	for _, r := range *records {
+		// populate duplicate copy list
+		if r.FileProcMode == lib.COPY {
+			dupList[r.DesPath] = append(dupList[r.DesPath], r.SrcPath)
+			if len(dupList[r.DesPath]) > 1 {
+				dupCopy = true
+			}
+		}
+		// output
 		if ezlog.GetLogLevel() >= ezlog.DEBUG ||
 			global.Flag.Verbose ||
-			!global.FlagUpdate.Quiet && (*r)[0] != lib.SKIP.String() {
-			str = strings.Join(*r, "\t")
+			!global.FlagUpdate.Quiet && r.FileProcMode != lib.SKIP {
+			// Dry run prefix?
 			if !global.FlagUpdate.Save {
-				str = "DryRun:\t" + str
+				recordStrArr = []string{"DryRun:"}
+			} else {
+				recordStrArr = nil
 			}
-			fmt.Fprintln(w, str)
+			if global.FlagUpdate.NoInfo {
+				// file path only
+				recordStrArr = append(recordStrArr,
+					r.FileProcMode.String(),
+					r.SrcPath,
+					"->",
+					r.DesPath,
+				)
+			} else {
+				// full file info
+				if r.DesExist {
+					desModTimeStr = r.DesModTime.Local().Format(timeFormat)
+				} else {
+					desModTimeStr = noModTimeStr // destination file does not exist(new file), no time
+				}
+				recordStrArr = append(recordStrArr,
+					r.FileProcMode.String(),
+					r.SrcPermission.String(),
+					*strany.Any(r.SrcSize),
+					r.SrcModTime.Local().Format(timeFormat),
+					r.SrcPath,
+					"->",
+					*strany.Any(r.DesSize),
+					desModTimeStr,
+					r.DesPath,
+				)
+			}
+			// send to tabwriter
+			fmt.Fprintln(tab_Writer, strings.Join(recordStrArr, "\t"))
 		}
 	}
-	w.Flush()
+	tab_Writer.Flush()
+	return dupCopy
+}
+
+func outputDupList(dupList map[string][]string) {
+	ezlog.Log().N("*** Duplicate Copy").Out()
+	if len(dupList) > 0 {
+		for desPath, srcPathArray := range dupList {
+			if len(srcPathArray) > 1 {
+				ezlog.Log().N(desPath).Lm(srcPathArray).Out()
+			}
+		}
+	}
 }

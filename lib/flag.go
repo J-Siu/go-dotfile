@@ -29,6 +29,7 @@ type TypeFlag struct {
 	Verbose bool
 }
 type TypeFlagUpdate struct {
-	Quiet bool // Show non-skip only
-	Save  bool
+	NoInfo bool
+	Quiet  bool // Show non-skip only
+	Save   bool
 }

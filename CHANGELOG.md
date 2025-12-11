@@ -59,3 +59,9 @@
   - fix save logic for append
 - v1.3.1
   - change flag non-skip to quiet, q, default false
+- v1.3.2
+  - TypeDotfile use TypeDotfileRecord struct
+  - `update`
+    - add `noinfo` output mode
+    - add duplicate copy list to output
+    - move output formatting to update.go

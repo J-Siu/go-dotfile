@@ -37,7 +37,6 @@ import (
 )
 
 type FileProcMode int8
-type TypeDotfileResult []*[]string
 
 const (
 	APPEND FileProcMode = iota
@@ -45,22 +44,38 @@ const (
 	SKIP
 )
 
+// Record struct to store processed dotfile information
+type TypeDotfileRecord struct {
+	DesExist      bool         `json:"DesExist"`
+	DesModTime    time.Time    `json:"DesModTime"`
+	DesPath       string       `json:"DesPath"`
+	DesSize       int64        `json:"DesSize"`
+	FileProcMode  FileProcMode `json:"FileProcMode"`
+	SrcModTime    time.Time    `json:"SrcModTime"`
+	SrcPath       string       `json:"SrcPath"`
+	SrcPermission os.FileMode  `json:"SrcPermission"`
+	SrcSize       int64        `json:"SrcSize"`
+}
+type TypeDotfileRecords []*TypeDotfileRecord
+
+// Property struct to initialize TypeDotfile
 type TypeDotfileProperty struct {
-	DirDest  *string      `json:"DirDest"`
-	DirSkip  *[]string    `json:"DirSkip"`
-	DirSrc   *string      `json:"DirSrc"`
-	FileSkip *[]string    `json:"FileSkip"`
-	Mode     FileProcMode `json:"Mode"`
-	Save     bool         `json:"Save"`
+	DirDest  *string      `json:"DirDest"`  // destination directory
+	DirSkip  *[]string    `json:"DirSkip"`  // substrings to filter out directories in DirSrc tree
+	DirSrc   *string      `json:"DirSrc"`   // source directory
+	FileSkip *[]string    `json:"FileSkip"` // substrings to filter out files in DirSrc tree
+	Mode     FileProcMode `json:"Mode"`     // COPY / APPEND
+	Save     bool         `json:"Save"`     // true: save, false: dry run
 }
 
+// Property struct to process Dotfile directories and files
 type TypeDotfile struct {
 	*basestruct.Base
 	*TypeDotfileProperty
 	// --- calculate in Run()
-	Dirs   *[]string         `json:"Dirs"`
-	Files  *[]string         `json:"Files"`
-	Result TypeDotfileResult `json:"Result"`
+	Dirs    *[]string `json:"Dirs"`
+	Files   *[]string `json:"Files"`
+	Records TypeDotfileRecords
 }
 
 func (t *TypeDotfile) New(property *TypeDotfileProperty) *TypeDotfile {
@@ -73,7 +88,7 @@ func (t *TypeDotfile) New(property *TypeDotfileProperty) *TypeDotfile {
 
 	t.Dirs = nil
 	t.Files = nil
-	t.Result = nil
+	t.Records = nil
 
 	ezlog.Debug().N(prefix).M(t).Out()
 
@@ -103,7 +118,7 @@ func (t *TypeDotfile) Run() {
 	// Append/Copy files
 	if t.Err == nil && t.Files != nil {
 		for _, filepathSrc := range *t.Files {
-			filepathDest := path.Join(*t.DirDest, pathHide(filepathSrc))
+			filepathDest := path.Join(*t.DirDest, hiddenPath(filepathSrc))
 			e = t.processFile(path.Join(*t.DirSrc, filepathSrc), filepathDest)
 			errs.Queue(prefix, e)
 		}
@@ -111,122 +126,115 @@ func (t *TypeDotfile) Run() {
 }
 
 // Process file base on Mode(append|copy)
+//   - [srcPath] = source file path
+//   - [desPath] = destination file path
 //
 // Not using TypeDotfile.Err
-func (t *TypeDotfile) processFile(src, dest string) (err error) {
+func (t *TypeDotfile) processFile(srcPath, desPath string) (err error) {
 	// prefix := t.MyType + ".processFile"
 
 	var (
-		data          []byte
-		desInfo       os.FileInfo
-		desModTime    time.Time
-		desModTimeStr string       = "---------- --:--:--"
-		fileProcMode  FileProcMode = t.Mode
-		srcInfo       os.FileInfo
-		srcModTime    time.Time
-		srcModTimeStr string = "---------- --:--:--"
-		srcPermission os.FileMode
-		timeFormat    string = "2006-01-02 15:04:05"
+		data    []byte
+		desInfo os.FileInfo
+		srcInfo os.FileInfo
+
+		record = TypeDotfileRecord{
+			DesPath:      desPath,
+			FileProcMode: t.Mode,
+			SrcPath:      srcPath,
+		}
 	)
+	// Get File info before actual processing
 
-	// Get File info before change
-
-	desInfo, err = os.Stat(dest)
+	desInfo, err = os.Stat(desPath)
 	if err == nil {
-		desModTime = desInfo.ModTime()
-		desModTimeStr = desModTime.Local().Format(timeFormat)
+		record.DesExist = true
+		record.DesModTime = desInfo.ModTime()
+		record.DesSize = desInfo.Size()
 	}
 	err = nil // Resetting err, as dest may not exist.
 
-	srcInfo, err = os.Stat(src)
+	srcInfo, err = os.Stat(srcPath)
 	if err == nil {
-		srcPermission = srcInfo.Mode()
-		srcModTime = srcInfo.ModTime()
-		srcModTimeStr = srcModTime.Local().Format(timeFormat)
+		record.SrcModTime = srcInfo.ModTime()
+		record.SrcPermission = srcInfo.Mode()
+		record.SrcSize = srcInfo.Size()
 	}
 
-	if fileProcMode == COPY && file.FileSame(src, dest) {
-		fileProcMode = SKIP
+	if record.FileProcMode == COPY && file.FileSame(srcPath, desPath) {
+		record.FileProcMode = SKIP
 	}
 
 	// Append only compare modTime
-	if fileProcMode == APPEND && strings.EqualFold(desModTimeStr, srcModTimeStr) {
-		fileProcMode = SKIP
+	if record.FileProcMode == APPEND && record.DesModTime.Equal(record.SrcModTime) {
+		record.FileProcMode = SKIP
 	}
 
-	if fileProcMode != SKIP && t.Save {
+	if record.FileProcMode != SKIP && t.Save {
 		// Read source file
 		if err == nil {
-			data, err = os.ReadFile(src)
+			data, err = os.ReadFile(srcPath)
 		}
 		//
 		if err == nil {
-			if fileProcMode == APPEND {
+			if record.FileProcMode == APPEND {
 				// APPEND: add newline to destination file
 				b := []byte("\n")
-				err = file.AppendByte(dest, &b)
+				err = file.AppendByte(desPath, &b)
 				if err == nil {
-					err = file.AppendByte(dest, &data)
+					err = file.AppendByte(desPath, &data)
 				}
 			} else {
 				// COPY
-				err = file.WriteByte(dest, &data, srcPermission)
+				err = file.WriteByte(desPath, &data, record.SrcPermission)
 			}
 		}
 		// Set dest modTime
 		if err == nil {
-			err = os.Chtimes(dest, srcModTime, srcModTime)
+			err = os.Chtimes(desPath, record.SrcModTime, record.SrcModTime)
 		}
 		// Set dest permission
 		if err == nil {
-			err = os.Chmod(dest, srcPermission)
+			err = os.Chmod(desPath, record.SrcPermission)
 		}
 	}
 
 	if err == nil {
-		var result []string
-		result = append(result,
-			fileProcMode.String(),
-			srcPermission.String(),
-			srcModTimeStr,
-			src,
-			"->",
-			desModTimeStr,
-			dest)
-
-		t.Result = append(t.Result, &result)
+		t.Records = append(t.Records, &record)
 	}
 
 	return err
 }
 
-// Get list of directory and list of file
-func (t *TypeDotfile) getDirFile(dir string) (*[]string, *[]string) {
+// Get list of directory and list of file, while excluding
+//   - files with name containing substring in [t.FileSkip]
+//   - directories with name containing substring in [t.DirSkip]
+func (t *TypeDotfile) getDirFile(dir string) (dirs, files *[]string) {
 	var (
-		dirs  []string
-		files []string
+		tmpDirs  []string
+		tmpFiles []string
 	)
 	symwalk.Walk(dir, func(p string, info os.FileInfo, err error) error {
 		if info.IsDir() {
 			if p != "." && !str.ArrayContainsSubString(t.DirSkip, "/"+p+"/", false) {
-				dirs = append(dirs, p)
+				tmpDirs = append(tmpDirs, p)
 			}
 		} else {
 			base := path.Base(p)
 			if !str.ArrayContains(t.FileSkip, &base, false) && !str.ArrayContainsSubString(t.DirSkip, "/"+p, false) {
-				files = append(files, p)
+				tmpFiles = append(tmpFiles, p)
 			}
 		}
 		return nil
 	})
-	return &dirs, &files
+	return &tmpDirs, &tmpFiles
 }
 
 // Create dotted/hidden directory
 func dirCreateHidden(dir, dirBase string) (e error) {
 	var prefix = "DirCreate"
 	if !(dir == "." || dir == "") {
-		dirDest := path.Join(dirBase, pathHide(dir))
+		dirDest := path.Join(dirBase, hiddenPath(dir))
 		if !file.IsDir(dirDest) {
 			e = os.MkdirAll(dirDest, os.ModePerm)
 			if e == nil {
@@ -240,7 +248,7 @@ func dirCreateHidden(dir, dirBase string) (e error) {
 }
 
 // Add "."" in front of path if there is none
-func pathHide(p string) string {
+func hiddenPath(p string) string {
 	if strings.HasPrefix(p, ".") {
 		return p
 	}
