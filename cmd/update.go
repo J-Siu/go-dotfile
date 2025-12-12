@@ -85,13 +85,16 @@ func output(records *lib.TypeDotfileRecords) {
 		timeFormat   = "2006-01-02 15:04:05"
 	)
 	var (
-		dupCopy       bool // true: duplicate copy exist
-		desModTimeStr string
-		recordStrArr  []string
-		tab_Writer    = tabwriter.NewWriter(os.Stdout, 1, 1, 1, ' ', 0)
-		dupList       = make(map[string][]string) // map desPath to srcPath array
+		dupCopy      bool                        // true: duplicate copy to same file
+		dupList      = make(map[string][]string) // map desPath to srcPath array
+		recordStrArr []string
+		tab_Writer   = tabwriter.NewWriter(os.Stdout, 1, 1, 1, ' ', 0)
 	)
 	for _, r := range *records {
+		var (
+			desModTimeStr string = noModTimeStr
+			desSize       int64
+		)
 		// populate duplicate copy list
 		if r.FileProcMode == lib.COPY {
 			dupList[r.DesPath] = append(dupList[r.DesPath], r.SrcPath)
@@ -120,19 +123,18 @@ func output(records *lib.TypeDotfileRecords) {
 				)
 			} else {
 				// full file info
-				if r.DesExist {
-					desModTimeStr = r.DesModTime.Local().Format(timeFormat)
-				} else {
-					desModTimeStr = noModTimeStr // no time if destination file does not exist(eg. new file)
+				if r.DesInfo != nil {
+					desModTimeStr = (*r.DesInfo).ModTime().Local().Format(timeFormat)
+					desSize = (*r.DesInfo).Size()
 				}
 				recordStrArr = append(recordStrArr,
 					r.FileProcMode.String(),
-					r.SrcPermission.String(),
-					*strany.Any(r.SrcSize),
-					r.SrcModTime.Local().Format(timeFormat),
+					(*r.SrcInfo).Mode().String(),
+					*strany.Any((*r.SrcInfo).Size()),
+					(*r.SrcInfo).ModTime().Local().Format(timeFormat),
 					r.SrcPath,
 					"->",
-					*strany.Any(r.DesSize),
+					*strany.Any(desSize),
 					desModTimeStr,
 					r.DesPath,
 				)

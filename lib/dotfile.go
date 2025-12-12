@@ -46,15 +46,11 @@ const (
 
 // Record struct to store processed dotfile information
 type TypeDotfileRecord struct {
-	DesExist      bool         `json:"DesExist"`
-	DesModTime    time.Time    `json:"DesModTime"`
-	DesPath       string       `json:"DesPath"`
-	DesSize       int64        `json:"DesSize"`
-	FileProcMode  FileProcMode `json:"FileProcMode"`
-	SrcModTime    time.Time    `json:"SrcModTime"`
-	SrcPath       string       `json:"SrcPath"`
-	SrcPermission os.FileMode  `json:"SrcPermission"`
-	SrcSize       int64        `json:"SrcSize"`
+	DesInfo      *os.FileInfo `json:"DesInfo"`
+	DesPath      string       `json:"DesPath"`
+	FileProcMode FileProcMode `json:"FileProcMode"`
+	SrcInfo      *os.FileInfo `json:"SrcInfo"`
+	SrcPath      string       `json:"SrcPath"`
 }
 type TypeDotfileRecords []*TypeDotfileRecord
 
@@ -134,9 +130,10 @@ func (t *TypeDotfile) processFile(srcPath, desPath string) (err error) {
 	// prefix := t.MyType + ".processFile"
 
 	var (
-		data    []byte
-		desInfo os.FileInfo
-		srcInfo os.FileInfo
+		data       []byte
+		desInfo    os.FileInfo
+		desModTime time.Time
+		srcInfo    os.FileInfo
 
 		record = TypeDotfileRecord{
 			DesPath:      desPath,
@@ -148,25 +145,20 @@ func (t *TypeDotfile) processFile(srcPath, desPath string) (err error) {
 
 	desInfo, err = os.Stat(desPath)
 	if err == nil {
-		record.DesExist = true
-		record.DesModTime = desInfo.ModTime()
-		record.DesSize = desInfo.Size()
+		desModTime = desInfo.ModTime()
+		record.DesInfo = &desInfo
 	}
 	err = nil // Resetting err, as dest may not exist.
 
 	srcInfo, err = os.Stat(srcPath)
-	if err == nil {
-		record.SrcModTime = srcInfo.ModTime()
-		record.SrcPermission = srcInfo.Mode()
-		record.SrcSize = srcInfo.Size()
-	}
+	record.SrcInfo = &srcInfo
 
 	if record.FileProcMode == COPY && file.FileSame(srcPath, desPath) {
 		record.FileProcMode = SKIP
 	}
 
 	// Append only compare modTime
-	if record.FileProcMode == APPEND && record.DesModTime.Equal(record.SrcModTime) {
+	if record.FileProcMode == APPEND && srcInfo.ModTime().Equal(desModTime) {
 		record.FileProcMode = SKIP
 	}
 
@@ -186,16 +178,16 @@ func (t *TypeDotfile) processFile(srcPath, desPath string) (err error) {
 				}
 			} else {
 				// COPY
-				err = file.WriteByte(desPath, &data, record.SrcPermission)
+				err = file.WriteByte(desPath, &data, srcInfo.Mode())
 			}
 		}
 		// Set dest modTime
 		if err == nil {
-			err = os.Chtimes(desPath, record.SrcModTime, record.SrcModTime)
+			err = os.Chtimes(desPath, srcInfo.ModTime(), srcInfo.ModTime())
 		}
 		// Set dest permission
 		if err == nil {
-			err = os.Chmod(desPath, record.SrcPermission)
+			err = os.Chmod(desPath, srcInfo.Mode())
 		}
 	}
 
