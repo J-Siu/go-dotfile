@@ -145,7 +145,7 @@ func output(records *lib.TypeDotfileRecords) {
 	}
 	tab_Writer.Flush()
 
-	if dupCopy {
+	if dupCopy && !global.FlagUpdate.Quiet {
 		outputDupList(dupList)
 	}
 }
@@ -153,11 +153,6 @@ func output(records *lib.TypeDotfileRecords) {
 func outputDupList(dupList map[string][]string) {
 	ezlog.Log().M("*** Duplicate Copy ***").Out()
 	if len(dupList) > 0 {
-		for desPath, srcPathArray := range dupList {
-			// It is duplicate copy if more than 1 src path
-			if len(srcPathArray) > 1 {
-				ezlog.Log().N(desPath).Lm(srcPathArray).Out()
-			}
-		}
+		ezlog.Log().M(dupList).Out()
 	}
 }
