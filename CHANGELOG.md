@@ -65,3 +65,5 @@
     - add `noinfo` output mode
     - add duplicate copy list to output
     - move output formatting to update.go
+- v1.3.3
+  - update go-helper/v2
