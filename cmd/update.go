@@ -151,8 +151,17 @@ func output(records *lib.TypeDotfileRecords) {
 }
 
 func outputDupList(dupList map[string][]string) {
-	ezlog.Log().M("*** Duplicate Copy ***").Out()
-	if len(dupList) > 0 {
-		ezlog.Log().M(dupList).Out()
+	var (
+		headerPrinted bool
+	)
+	for k, v := range dupList {
+		if len(v) > 1 {
+			if !headerPrinted {
+				ezlog.Log().M("*** Duplicate Copy ***").Out()
+				headerPrinted = true
+			}
+			ezlog.Log().N(k).Out()
+			ezlog.Log().M(v).Out()
+		}
 	}
 }
