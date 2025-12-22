@@ -67,3 +67,5 @@
     - move output formatting to update.go
 - v1.3.3
   - update go-helper/v2
+- v1.3.4
+  - fix duplicate copy list output
