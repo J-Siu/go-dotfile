@@ -101,22 +101,23 @@ func (t *TypeDotfile) Run() {
 		ezlog.Debug().N(prefix).N("Dirs").Lm(t.Dirs).Out()
 		ezlog.Debug().N(prefix).N("Files").Lm(t.Files).Out()
 	}
-	// create dirs
-	if t.Err == nil && t.Dirs != nil {
-		for _, fileDir := range *t.Dirs {
-			t.Err = dirCreateHidden(fileDir, *t.DirDest)
-			if t.Err != nil {
-				errs.Queue(prefix, t.Err)
-				break
+	if t.Err == nil {
+		// create dirs
+		if t.Dirs != nil {
+			for _, fileDir := range *t.Dirs {
+				t.Err = dirCreateHidden(fileDir, *t.DirDest)
+				if t.Err != nil {
+					errs.Queue(prefix, t.Err)
+				}
 			}
 		}
-	}
-	// Append/Copy files
-	if t.Err == nil && t.Files != nil {
-		for _, filepathSrc := range *t.Files {
-			filepathDest := path.Join(*t.DirDest, hiddenPath(filepathSrc))
-			e = t.processFile(path.Join(*t.DirSrc, filepathSrc), filepathDest)
-			errs.Queue(prefix, e)
+		// Append/Copy files
+		if t.Files != nil {
+			for _, filepathSrc := range *t.Files {
+				filepathDest := path.Join(*t.DirDest, hiddenPath(filepathSrc))
+				e = t.processFile(path.Join(*t.DirSrc, filepathSrc), filepathDest)
+				errs.Queue(prefix, e)
+			}
 		}
 	}
 }
