@@ -69,3 +69,5 @@
   - update go-helper/v2
 - v1.3.4
   - fix duplicate copy list output
+- v1.3.5
+  - continue to file processing on directory error
