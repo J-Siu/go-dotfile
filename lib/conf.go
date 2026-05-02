@@ -35,12 +35,6 @@ var Default = TypeConf{
 	FileConf: "$HOME/.config/go-dotfile.json",
 }
 
-const (
-	ConfDirAP   = "DirAP"
-	ConfDirCP   = "DirCP"
-	ConfDirDest = "DirDest"
-)
-
 type TypeConf struct {
 	*basestruct.Base
 
