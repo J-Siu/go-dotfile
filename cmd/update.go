@@ -23,17 +23,15 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"fmt"
-	"os"
-	"strings"
-	"text/tabwriter"
-
 	"github.com/J-Siu/go-dotfile/global"
 	"github.com/J-Siu/go-dotfile/lib"
-	"github.com/J-Siu/go-helper/v2/ezlog"
-	"github.com/J-Siu/go-helper/v2/strany"
 	"github.com/spf13/cobra"
 )
+
+type ModeDirPair struct {
+	Mode lib.FileProcMode
+	Dirs *[]string
+}
 
 // updateCmd represents the update command
 var updateCmd = &cobra.Command{
@@ -42,7 +40,11 @@ var updateCmd = &cobra.Command{
 	Short:   "Update dotfiles",
 	Run: func(cmd *cobra.Command, args []string) {
 		var (
-			df       lib.TypeDotfile
+			df            lib.TypeDotfile
+			mode_dir_pair = []ModeDirPair{
+				{lib.COPY, &global.Conf.DirCP},
+				{lib.APPEND, &global.Conf.DirAP},
+			}
 			property = lib.TypeDotfileProperty{
 				DirDest:  &global.Conf.DirDest,
 				DirSkip:  &global.Conf.DirSkip,
@@ -51,23 +53,16 @@ var updateCmd = &cobra.Command{
 			}
 			records lib.TypeDotfileRecords
 		)
-		// Process copy
-		property.Mode = lib.COPY
-		for _, dir := range global.Conf.DirCP {
-			property.DirSrc = &dir
-			df.New(&property).Run()
-			records = append(records, df.Records...)
-		}
-		// Process append
-		property.Mode = lib.APPEND
-		for _, dir := range global.Conf.DirAP {
-			property.DirSrc = &dir
-			df.New(&property)
-			df.Run()
-			records = append(records, df.Records...)
+		for _, m := range mode_dir_pair {
+			property.Mode = m.Mode
+			for _, dir := range *m.Dirs {
+				property.DirSrc = &dir
+				df.New(&property).Run()
+				records = append(records, df.Records...)
+			}
 		}
 		// Output
-		output(&records)
+		records.Output(global.FlagUpdate.NoInfo, global.FlagUpdate.Quiet, global.Flag.Verbose, global.FlagUpdate.Save)
 	},
 }
 
@@ -77,91 +72,4 @@ func init() {
 	cmd.Flags().BoolVarP(&global.FlagUpdate.NoInfo, "noinfo", "n", false, "Do not print file info")
 	cmd.Flags().BoolVarP(&global.FlagUpdate.Quiet, "quiet", "q", false, "Show non-skip file only")
 	cmd.Flags().BoolVarP(&global.FlagUpdate.Save, "save", "s", false, "Save changes")
-}
-
-func output(records *lib.TypeDotfileRecords) {
-	const (
-		noModTimeStr = "---------- --:--:--"
-		timeFormat   = "2006-01-02 15:04:05"
-	)
-	var (
-		dupCopy      bool                        // true: duplicate copy to same file
-		dupList      = make(map[string][]string) // map desPath to srcPath array
-		recordStrArr []string
-		tab_Writer   = tabwriter.NewWriter(os.Stdout, 1, 1, 1, ' ', 0)
-	)
-	for _, r := range *records {
-		var (
-			desModTimeStr string = noModTimeStr
-			desSize       int64
-		)
-		// populate duplicate copy list
-		if r.FileProcMode == lib.COPY {
-			dupList[r.DesPath] = append(dupList[r.DesPath], r.SrcPath)
-			// It is duplicate copy if more than 1 src path
-			if len(dupList[r.DesPath]) > 1 {
-				dupCopy = true
-			}
-		}
-		// output
-		if ezlog.GetLogLevel() >= ezlog.DEBUG ||
-			global.Flag.Verbose ||
-			!global.FlagUpdate.Quiet && r.FileProcMode != lib.SKIP {
-			// Dry run prefix?
-			if !global.FlagUpdate.Save {
-				recordStrArr = []string{"DryRun:"}
-			} else {
-				recordStrArr = nil
-			}
-			if global.FlagUpdate.NoInfo {
-				// file path only
-				recordStrArr = append(recordStrArr,
-					r.FileProcMode.String(),
-					r.SrcPath,
-					"->",
-					r.DesPath,
-				)
-			} else {
-				// full file info
-				if r.DesInfo != nil {
-					desModTimeStr = (*r.DesInfo).ModTime().Local().Format(timeFormat)
-					desSize = (*r.DesInfo).Size()
-				}
-				recordStrArr = append(recordStrArr,
-					r.FileProcMode.String(),
-					(*r.SrcInfo).Mode().String(),
-					*strany.Any((*r.SrcInfo).Size()),
-					(*r.SrcInfo).ModTime().Local().Format(timeFormat),
-					r.SrcPath,
-					"->",
-					*strany.Any(desSize),
-					desModTimeStr,
-					r.DesPath,
-				)
-			}
-			// send to tabwriter
-			fmt.Fprintln(tab_Writer, strings.Join(recordStrArr, "\t"))
-		}
-	}
-	tab_Writer.Flush()
-
-	if dupCopy && !global.FlagUpdate.Quiet {
-		outputDupList(dupList)
-	}
-}
-
-func outputDupList(dupList map[string][]string) {
-	var (
-		headerPrinted bool
-	)
-	for k, v := range dupList {
-		if len(v) > 1 {
-			if !headerPrinted {
-				ezlog.Log().M("*** Duplicate Copy ***").Out()
-				headerPrinted = true
-			}
-			ezlog.Log().N(k).Out()
-			ezlog.Log().M(v).Out()
-		}
-	}
 }

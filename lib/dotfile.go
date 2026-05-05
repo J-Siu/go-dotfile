@@ -44,16 +44,6 @@ const (
 	SKIP
 )
 
-// Record struct to store processed dotfile information
-type TypeDotfileRecord struct {
-	DesInfo      *os.FileInfo `json:"DesInfo"`
-	DesPath      string       `json:"DesPath"`
-	FileProcMode FileProcMode `json:"FileProcMode"`
-	SrcInfo      *os.FileInfo `json:"SrcInfo"`
-	SrcPath      string       `json:"SrcPath"`
-}
-type TypeDotfileRecords []*TypeDotfileRecord
-
 // Property struct to initialize TypeDotfile
 type TypeDotfileProperty struct {
 	DirDest  *string      `json:"DirDest"`  // destination directory
