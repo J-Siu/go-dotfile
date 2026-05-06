@@ -38,12 +38,12 @@ var Default = TypeConf{
 type TypeConf struct {
 	*basestruct.Base
 
-	DirAP    []string `json:"DirAP"`
-	DirCP    []string `json:"DirCP"`
-	DirDest  string   `json:"DirDest"`
-	DirSkip  []string `json:"DirSkip"`
-	FileConf string   `json:"FileConf"`
-	FileSkip []string `json:"FileSkip"`
+	DirAP    []string `json:"DirAP,omitempty"`
+	DirCP    []string `json:"DirCP,omitempty"`
+	DirDest  string   `json:"DirDest,omitempty"`
+	DirSkip  []string `json:"DirSkip,omitempty"`
+	FileConf string   `json:"FileConf,omitempty"`
+	FileSkip []string `json:"FileSkip,omitempty"`
 }
 
 func (t *TypeConf) New() {
@@ -75,7 +75,7 @@ func (t *TypeConf) readFileConf() {
 	viper.SetConfigType("json")
 	viper.SetConfigFile(file.TildeEnvExpand(t.FileConf))
 	viper.AutomaticEnv()
-	if t.Err = viper.ReadInConfig(); t.Err != nil {
+	if t.Err = viper.ReadInConfig(); t.Err == nil {
 		t.Err = viper.Unmarshal(&t)
 	} else {
 		ezlog.Debug().N(prefix).M(t.Err).Out()
@@ -94,16 +94,11 @@ func (t *TypeConf) setDefault() {
 func (t *TypeConf) expand() {
 	t.DirDest = file.TildeEnvExpand(t.DirDest)
 	t.FileConf = file.TildeEnvExpand(t.FileConf)
-	for i := range t.DirAP {
-		t.DirAP[i] = file.TildeEnvExpand(t.DirAP[i])
-	}
-	for i := range t.DirCP {
-		t.DirCP[i] = file.TildeEnvExpand(t.DirCP[i])
-	}
-	for i := range t.DirSkip {
-		t.DirSkip[i] = file.TildeEnvExpand(t.DirSkip[i])
-	}
-	for i := range t.FileSkip {
-		t.FileSkip[i] = file.TildeEnvExpand(t.FileSkip[i])
+
+	strArrays := [][]string{t.DirAP, t.DirCP, t.DirSkip, t.FileSkip}
+	for _, arr := range strArrays {
+		for i := range arr {
+			arr[i] = file.TildeEnvExpand(arr[i])
+		}
 	}
 }
