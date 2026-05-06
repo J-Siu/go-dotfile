@@ -9,17 +9,19 @@ func _() {
 	// Re-run the stringer command to generate them again.
 	var x [1]struct{}
 	_ = x[APPEND-0]
-	_ = x[COPY-1]
-	_ = x[SKIP-2]
+	_ = x[CHMOD-1]
+	_ = x[COPY-2]
+	_ = x[SKIP-3]
 }
 
-const _FileProcMode_name = "APPENDCOPYSKIP"
+const _FileProcMode_name = "APPENDCHMODCOPYSKIP"
 
-var _FileProcMode_index = [...]uint8{0, 6, 10, 14}
+var _FileProcMode_index = [...]uint8{0, 6, 11, 15, 19}
 
 func (i FileProcMode) String() string {
-	if i < 0 || i >= FileProcMode(len(_FileProcMode_index)-1) {
+	idx := int(i) - 0
+	if i < 0 || idx >= len(_FileProcMode_index)-1 {
 		return "FileProcMode(" + strconv.FormatInt(int64(i), 10) + ")"
 	}
-	return _FileProcMode_name[_FileProcMode_index[i]:_FileProcMode_index[i+1]]
+	return _FileProcMode_name[_FileProcMode_index[idx]:_FileProcMode_index[idx+1]]
 }

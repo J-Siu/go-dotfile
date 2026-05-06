@@ -40,6 +40,7 @@ type FileProcMode int8
 
 const (
 	APPEND FileProcMode = iota
+	CHMOD
 	COPY
 	SKIP
 )
@@ -153,28 +154,35 @@ func (t *TypeDotfile) processFile(srcPath, desPath string) (err error) {
 		record.FileProcMode = SKIP
 	}
 
+	// Chmod only if file mode is different, as chmod does not change modTime
+	if record.FileProcMode == SKIP && srcInfo.Mode() != desInfo.Mode() {
+		record.FileProcMode = CHMOD
+	}
+
 	if record.FileProcMode != SKIP && t.Save {
-		// Read source file
-		if err == nil {
-			data, err = os.ReadFile(srcPath)
-		}
-		//
-		if err == nil {
-			if record.FileProcMode == APPEND {
-				// APPEND: add newline to destination file
-				b := []byte("\n")
-				err = file.AppendByte(desPath, &b)
-				if err == nil {
-					err = file.AppendByte(desPath, &data)
-				}
-			} else {
-				// COPY
-				err = file.WriteByte(desPath, &data, srcInfo.Mode())
+		if record.FileProcMode != CHMOD {
+			// Read source file
+			if err == nil {
+				data, err = os.ReadFile(srcPath)
 			}
-		}
-		// Set dest modTime
-		if err == nil {
-			err = os.Chtimes(desPath, srcInfo.ModTime(), srcInfo.ModTime())
+			//
+			if err == nil {
+				if record.FileProcMode == APPEND {
+					// APPEND: add newline to destination file
+					b := []byte("\n")
+					err = file.AppendByte(desPath, &b)
+					if err == nil {
+						err = file.AppendByte(desPath, &data)
+					}
+				} else {
+					// COPY
+					err = file.WriteByte(desPath, &data, srcInfo.Mode())
+				}
+			}
+			// Set dest modTime
+			if err == nil {
+				err = os.Chtimes(desPath, srcInfo.ModTime(), srcInfo.ModTime())
+			}
 		}
 		// Set dest permission
 		if err == nil {
