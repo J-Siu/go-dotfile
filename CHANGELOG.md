@@ -71,3 +71,7 @@
   - fix duplicate copy list output
 - v1.3.5
   - continue to file processing on directory error
+- v1.3.6
+  - handle permission-only change
+  - refactor output to TypeDotfileRecords
+  - use ModeDirPair for update loop
