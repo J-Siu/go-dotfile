@@ -86,18 +86,14 @@ func (t *TypeDotfile) Run() {
 	prefix := t.MyType + ".Run"
 	var e error
 	// cd to simplify path handling
-	t.Err = os.Chdir(*t.DirSrc)
-	if t.Err == nil {
+	if t.Err = os.Chdir(*t.DirSrc); t.Err == nil {
 		t.Dirs, t.Files = t.getDirFile(".")
 		ezlog.Debug().N(prefix).N("Dirs").Lm(t.Dirs).Out()
 		ezlog.Debug().N(prefix).N("Files").Lm(t.Files).Out()
-	}
-	if t.Err == nil {
 		// create dirs
 		if t.Dirs != nil {
 			for _, fileDir := range *t.Dirs {
-				t.Err = dirCreateHidden(fileDir, *t.DirDest)
-				if t.Err != nil {
+				if t.Err = dirCreateHidden(fileDir, *t.DirDest); t.Err == nil {
 					errs.Queue(prefix, t.Err)
 				}
 			}
@@ -170,12 +166,10 @@ func (t *TypeDotfile) processFile(srcPath, desPath string) (err error) {
 				if record.FileProcMode == APPEND {
 					// APPEND: add newline to destination file
 					b := []byte("\n")
-					err = file.AppendByte(desPath, &b)
-					if err == nil {
+					if err = file.AppendByte(desPath, &b); err == nil {
 						err = file.AppendByte(desPath, &data)
 					}
-				} else {
-					// COPY
+				} else { // COPY
 					err = file.WriteByte(desPath, &data, srcInfo.Mode())
 				}
 			}
@@ -227,8 +221,7 @@ func dirCreateHidden(dir, dirBase string) (e error) {
 	if !(dir == "." || dir == "") {
 		dirDest := path.Join(dirBase, hiddenPath(dir))
 		if !file.IsDir(dirDest) {
-			e = os.MkdirAll(dirDest, os.ModePerm)
-			if e == nil {
+			if e = os.MkdirAll(dirDest, os.ModePerm); e == nil {
 				ezlog.Debug().N(prefix).N("created").M(dirDest).Out()
 			} else {
 				ezlog.Err().N(prefix).N("ERR").M(e).Out()
