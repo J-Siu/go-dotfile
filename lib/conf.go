@@ -75,9 +75,7 @@ func (t *TypeConf) readFileConf() {
 	viper.SetConfigType("json")
 	viper.SetConfigFile(file.TildeEnvExpand(t.FileConf))
 	viper.AutomaticEnv()
-	t.Err = viper.ReadInConfig()
-
-	if t.Err == nil {
+	if t.Err = viper.ReadInConfig(); t.Err != nil {
 		t.Err = viper.Unmarshal(&t)
 	} else {
 		ezlog.Debug().N(prefix).M(t.Err).Out()
