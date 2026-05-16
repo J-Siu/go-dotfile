@@ -75,3 +75,5 @@
   - handle permission-only change
   - refactor output to TypeDotfileRecords
   - use ModeDirPair for update loop
+- v1.3.7
+  - only create directory on save mode
