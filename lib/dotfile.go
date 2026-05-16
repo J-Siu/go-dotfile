@@ -90,8 +90,8 @@ func (t *TypeDotfile) Run() {
 		t.Dirs, t.Files = t.getDirFile(".")
 		ezlog.Debug().N(prefix).N("Dirs").Lm(t.Dirs).Out()
 		ezlog.Debug().N(prefix).N("Files").Lm(t.Files).Out()
-		// create dirs
-		if t.Dirs != nil {
+		// create dirs on 'save' mode
+		if t.Save && t.Dirs != nil {
 			for _, fileDir := range *t.Dirs {
 				if t.Err = dirCreateHidden(fileDir, *t.DirDest); t.Err == nil {
 					errs.Queue(prefix, t.Err)
@@ -129,8 +129,8 @@ func (t *TypeDotfile) processFile(srcPath, desPath string) (err error) {
 			SrcPath:      srcPath,
 		}
 	)
-	// Get File info before actual processing
 
+	// Get File info before actual processing
 	desInfo, err = os.Stat(desPath)
 	if err == nil {
 		desModTime = desInfo.ModTime()
