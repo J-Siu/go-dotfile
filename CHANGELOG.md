@@ -77,3 +77,5 @@
   - use ModeDirPair for update loop
 - v1.3.7
   - only create directory on save mode
+- v1.3.8
+  - update go-helper/v2

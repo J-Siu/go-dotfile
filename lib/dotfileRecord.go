@@ -69,11 +69,11 @@ func (t *TypeDotfileRecords) Output(noInfo, quiet, verbose, save bool) {
 				recordStrArr = append(recordStrArr,
 					r.FileProcMode.String(),
 					(*r.SrcInfo).Mode().String(),
-					*strany.Any((*r.SrcInfo).Size()),
+					strany.Any((*r.SrcInfo).Size()),
 					(*r.SrcInfo).ModTime().Local().Format(STR_TIME_FORMAT),
 					r.SrcPath,
 					"->",
-					*strany.Any(desSize),
+					strany.Any(desSize),
 					desModTimeStr,
 					r.DesPath,
 				)

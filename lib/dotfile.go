@@ -205,8 +205,7 @@ func (t *TypeDotfile) getDirFile(dir string) (dirs, files *[]string) {
 				tmpDirs = append(tmpDirs, p)
 			}
 		} else {
-			base := path.Base(p)
-			if !str.ArrayContains(t.FileSkip, &base, false) && !str.ArrayContainsSubString(t.DirSkip, "/"+p, false) {
+			if !str.ArrayContains(t.FileSkip, path.Base(p), false) && !str.ArrayContainsSubString(t.DirSkip, "/"+p, false) {
 				tmpFiles = append(tmpFiles, p)
 			}
 		}
